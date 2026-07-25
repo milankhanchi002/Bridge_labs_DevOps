@@ -1,0 +1,103 @@
+Phase 1 — Files & Directories
+pwd
+ls
+cd
+mkdir
+rmdir
+touch
+cp
+mv
+rm
+ln
+stat
+tree
+Phase 2 — Viewing & Editing
+cat
+less
+more
+head
+tail
+nano
+vim
+Phase 3 — Searching & Text Processing
+find
+locate
+grep
+egrep
+sed
+awk
+sort
+uniq
+cut
+paste
+tr
+wc
+xargs
+Phase 4 — Permissions & Users
+chmod
+chown
+chgrp
+umask
+id
+whoami
+su
+sudo
+useradd
+usermod
+passwd
+Phase 5 — Processes
+ps
+top
+htop
+kill
+killall
+pkill
+jobs
+bg
+fg
+nice
+renice
+nohup
+Phase 6 — Storage
+df
+du
+lsblk
+mount
+umount
+fdisk
+blkid
+Phase 7 — Networking
+ip
+ss
+ping
+traceroute
+dig
+nslookup
+curl
+wget
+netcat
+ssh
+scp
+rsync
+Phase 8 — Services & Logs
+systemctl
+journalctl
+dmesg
+crontab
+at
+Phase 9 — Archives & Compression
+tar
+gzip
+bzip2
+xz
+zip
+unzip
+Phase 10 — Debugging & Advanced
+strace
+lsof
+vmstat
+iostat
+free
+sar
+watch
+time

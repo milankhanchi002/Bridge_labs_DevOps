@@ -1,0 +1,21 @@
+
+
+
+[ ] MODULE 2: FILESYSTEM HIERARCHY STANDARD (FHS)
+--------------------------------------------------------------------------------
+    [ ] /         : Root directory (base of the entire inverted tree)
+    [ ] /boot     : Kernel binaries (vmlinuz), initramfs, GRUB bootloader
+    [ ] /etc      : System-wide plain text configuration files
+    [ ] /bin,/sbin: Essential binary utilities (symlinked to /usr/bin)
+    [ ] /lib,/lib64: Core dynamic libraries required for boot
+    [ ] /home     : User personal directories (/home/username)
+    [ ] /root     : Superuser (root) home directory
+    [ ] /usr      : Secondary user hierarchy (/usr/bin, /usr/local)
+    [ ] /opt      : Standalone third-party software packages
+    [ ] /var      : Variable dynamic data (logs, spool, caches)
+    [ ] /tmp      : Volatile temporary files (cleared on reboot)
+    [ ] /proc     : Process info pseudo-filesystem (in-RAM kernel state)
+    [ ] /sys      : Sysfs pseudo-filesystem (hardware & driver state)
+    [ ] /dev      : Device nodes (/dev/sda, /dev/nvme0n1, /dev/null)
+    [ ] /mnt,/media: Storage mount points (manual / removable)
+

@@ -1,0 +1,501 @@
+Phase 1 — Files & Directories
+pwd
+ls
+cd
+mkdir
+rmdir
+touch
+cp
+mv
+rm
+ln
+stat
+tree
+
+pwd-
+DESCRIPTION:
+  Prints the absolute path of the current working directory, starting from 
+  the root directory (/).
+--------------------------------------------------------------------------------
+KEY OPTIONS & FLAGS:
+--------------------------------------------------------------------------------
+  -L, --logical     Print the logical path, including any symbolic links 
+                    (default behavior).
+  -P, --physical    Print the physical path, resolving all symbolic links to 
+                    show the actual directory on disk.
+ * Useful when navigating deep folder trees to verify your current location.
+  * Useful in bash scripts to save the current directory path into a variable:
+      CURRENT_DIR=$(pwd)
+
+
+
+ls-
+================================================================================
+COMMAND: ls (List Directory Contents)
+================================================================================
+DESCRIPTION:
+  Lists information about files and directories in the current directory or 
+  a specified directory path.
+
+BASIC SYNTAX:
+  ls [OPTIONS] [FILE/DIRECTORY]
+--------------------------------------------------------------------------------
+KEY OPTIONS & FLAGS:
+--------------------------------------------------------------------------------
+  -l                Long format listing. Shows permissions, owner, group, 
+                    file size, and last modified date.
+  -a, --all         Show all files, including hidden files (starting with .).
+  -A, --almost-all  Show all files including hidden ones, but omit . and ..
+  -h, --human-readable
+                    Print file sizes in readable format (e.g., 1K, 234M, 2G). 
+                    Must be used with -l.
+  -t                Sort files by modification time (newest first).
+  -S                Sort files by file size (largest first).
+  -r, --reverse     Reverse the order while sorting.
+  -R, --recursive   List all subdirectories recursively.
+  -1                Display output in a single column.
+  --color[=WHEN]    Colorize the output (auto, always, or never).
+--------------------------------------------------------------------------------
+PRACTICAL EXAMPLES:
+--------------------------------------------------------------------------------
+  1. Standard file listing:
+     $ ls
+
+  2. Detailed view including hidden files with human-readable sizes:
+     $ ls -lah
+     drwxr-xr-x   5 user  group   160B Jul 25 10:00 .
+     drwxr-xr-x  12 user  group   384B Jul 25 09:30 ..
+     -rw-r--r--   1 user  group   1.2K Jul 25 09:45 notes.txt
+
+  3. Sort files by modification time (newest first):
+     $ ls -lt
+
+  4. List contents of a specific folder without changing directory:
+     $ ls -l /var/log
+--------------------------------------------------------------------------------
+QUICK NOTES:
+--------------------------------------------------------------------------------
+  * Files starting with a dot (.) are hidden files in Linux/Unix.
+  * You can combine multiple short options together (e.g., -la, -lt, -lah).
+================================================================================
+
+
+
+
+
+cd-
+================================================================================
+COMMAND: cd (Change Directory)
+================================================================================
+
+DESCRIPTION:
+  Changes the current working directory in the terminal shell. It allows you 
+  to navigate through the file system.
+
+BASIC SYNTAX:
+  cd [DIRECTORY_PATH]
+
+--------------------------------------------------------------------------------
+KEY SHORTCUTS & SPECIAL PATHS:
+--------------------------------------------------------------------------------
+  cd ~              Navigate to the current user's home directory.
+  cd                (No arguments) Navigate directly to the home directory.
+  cd ..             Move up one level into the parent directory.
+  cd ../..          Move up two levels in the directory tree.
+  cd -              Switch back to the previous working directory.
+  cd /              Navigate to the root directory of the file system.
+
+--------------------------------------------------------------------------------
+KEY OPTIONS & FLAGS:
+--------------------------------------------------------------------------------
+  -L                Force symbolic links to be followed (default behavior).
+  -P                Use physical directory structure; resolves symbolic links 
+                    to their real directory path.
+'cd' is a shell built-in command, not an external program binary.
+  * Tab completion works with cd — press Tab to auto-complete directory names!                    
+
+
+
+
+mkdir-
+================================================================================
+COMMAND: mkdir (Make Directory)
+================================================================================
+
+DESCRIPTION:
+  Creates one or more new directories (folders) in the file system.
+
+BASIC SYNTAX:
+  mkdir [OPTIONS] DIRECTORY_NAME...
+
+--------------------------------------------------------------------------------
+KEY OPTIONS & FLAGS:
+--------------------------------------------------------------------------------
+  -p, --parents     Create parent directories as needed. No error if existing.
+  -v, --verbose     Print a message for each created directory.
+  -m, --mode=MODE   Set file permissions (chmod style) for the new directory 
+                    at creation time.
+  --help            Display help documentation and exit.
+  --version         Output version information and exit.
+
+--------------------------------------------------------------------------------
+PRACTICAL EXAMPLES:
+--------------------------------------------------------------------------------
+  1. Create a single directory:
+     $ mkdir my_folder
+
+  2. Create multiple directories at once:
+     $ mkdir docs images downloads
+
+  3. Create nested directories (parent and subfolders together):
+     $ mkdir -p project/src/components
+
+  4. Create a directory with specific permissions (e.g., read/write/execute for owner only):
+     $ mkdir -m 700 private_folder
+
+  5. Create directories with verbose output:
+     $ mkdir -pv app/controllers
+     mkdir: created directory 'app'
+     mkdir: created directory 'app/controllers'
+
+--------------------------------------------------------------------------------
+QUICK NOTES:
+--------------------------------------------------------------------------------
+  * Without -p, mkdir will throw an error if you try to create a nested folder 
+    whose parent folder doesn't exist yet.
+  * You can use brace expansion to create structured folders quickly:
+      $ mkdir -p project/{src,bin,doc,lib}
+================================================================================  
+
+
+
+
+
+rmdir-
+================================================================================
+COMMAND: rmdir (Remove Empty Directory)
+================================================================================
+
+DESCRIPTION:
+  Removes existing EMPTY directories from the file system. It will not delete 
+  directories that contain files or subdirectories.
+
+BASIC SYNTAX:
+  rmdir [OPTIONS] DIRECTORY_NAME...
+
+--------------------------------------------------------------------------------
+KEY OPTIONS & FLAGS:
+--------------------------------------------------------------------------------
+  -p, --parents     Remove DIRECTORY and its ancestors (e.g., 'rmdir -p a/b/c' 
+                    deletes 'c', then 'b', then 'a' if all are empty).
+  -v, --verbose     Output a diagnostic message for every directory processed.
+  --ignore-fail-on-non-empty
+                    Ignore errors caused by non-empty directories instead of 
+                    stopping execution.
+  --help            Display help documentation and exit.
+  --version         Output version information and exit.
+
+--------------------------------------------------------------------------------
+PRACTICAL EXAMPLES:
+--------------------------------------------------------------------------------
+  1. Remove a single empty directory:
+     $ rmdir old_folder
+
+  2. Remove multiple empty directories at once:
+     $ rmdir temp_dir unused_dir draft_dir
+
+  3. Remove a chain of empty nested directories:
+     $ rmdir -p project/src/components
+     (Deletes 'components', then 'src' if empty, then 'project' if empty)
+
+  4. Delete with verbose feedback:
+     $ rmdir -v empty_folder
+     rmdir: removing directory, 'empty_folder'
+
+--------------------------------------------------------------------------------
+QUICK NOTES:
+--------------------------------------------------------------------------------
+  * Security check: rmdir is safer than 'rm -rf' because it guarantees you 
+    won't accidentally delete important files inside the directory.
+  * If a directory contains even a single file or hidden file, rmdir will fail 
+    with: "Directory not empty". To delete non-empty directories, use 'rm -r'.
+================================================================================
+
+
+
+
+
+
+
+touch-================================================================================
+COMMAND: touch (Update File Timestamps / Create Empty File)
+================================================================================
+
+DESCRIPTION:
+  Creates a new empty file if it does not exist, or updates the access and 
+  modification timestamps of an existing file without altering its contents.
+
+BASIC SYNTAX:
+  touch [OPTIONS] FILE_NAME...
+
+--------------------------------------------------------------------------------
+KEY OPTIONS & FLAGS:
+--------------------------------------------------------------------------------
+  -a                Change the access time (atime) only.
+  -m                Change the modification time (mtime) only.
+  -c, --no-create   Do not create any files if they do not exist (no error).
+  -d, --date=STRING Set timestamp using a human-readable string 
+                    (e.g., "yesterday", "2 hours ago", "25 July 2026").
+  -t STAMP          Set timestamp using standard format [[CC]YY]MMDDhhmm[.ss]
+                    (e.g., 202607251030.00).
+  -r, --reference=FILE
+                    Use the reference file's timestamp instead of current time.
+  --help            Display help documentation and exit.
+  --version         Output version information and exit.
+
+--------------------------------------------------------------------------------
+PRACTICAL EXAMPLES:
+--------------------------------------------------------------------------------
+  1. Create a single new empty file:
+     $ touch notes.txt
+
+  2. Create multiple empty files at once:
+     $ touch index.html style.css app.js
+
+  3. Update timestamp of an existing file to current system time:
+     $ touch existing_file.txt
+
+  4. Set timestamp to a specific custom date and time:
+     $ touch -t 202607251030.00 report.txt
+     $ touch -d "yesterday 14:00" log.txt
+
+  5. Copy timestamp from another file:
+     $ touch -r source_file.txt target_file.txt
+
+  6. Update timestamp only if file exists (don't create if missing):
+     $ touch -c config.json
+
+--------------------------------------------------------------------------------
+QUICK NOTES:
+--------------------------------------------------------------------------------
+  * Use the 'stat' command (e.g., $ stat file.txt) to view a file's exact 
+    access, modification, and change timestamps.
+  * You can use brace expansion to create sequential empty files:
+      $ touch file{1..5}.txt
+================================================================================
+
+
+
+
+
+
+
+rm-
+While rm removes the file pointer instantly without moving it to the 
+system Trash/Recycle Bin, the actual raw data on your disk isn't immediately
+ erased. The operating system simply marks those disk sectors as "free" 
+ to be overwritten by new data.
+
+If you act quickly before new data overwrites those sectors,
+ you can often recover deleted files. Here are the main ways 
+ to restore data deleted by rm:
+
+ DESCRIPTION:
+  Deletes files, directories, and symbolic links from the file system. 
+  CAUTION: Files deleted with 'rm' are permanently removed and DO NOT go to 
+  a Trash / Recycle Bin.
+  -r, -R, --recursive
+                    Remove directories and their contents recursively 
+                    (required for deleting folders with contents).
+  -i                Prompt before every removal (interactive mode).
+  -I                Prompt once before removing more than three files, or 
+                    when removing recursively (less intrusive than -i).
+  -f, --force       Ignore non-existent files and arguments, never prompt, 
+                    and force deletion even if read-only.
+  -d, --dir         Remove empty directories (similar to rmdir).
+  -v, --verbose     Explain what is being done line-by-line.
+  --help            Display help documentation and exit.
+  --version         Output version information and exit.
+
+  * Extreme Caution: 'rm -rf /' or 'rm -rf *' will permanently erase data 
+    without confirmation. Always double-check your current directory using 'pwd' 
+    before running 'rm -rf'.
+  * Trying to delete a directory without '-r' or '-d' will cause an error: 
+    "rm: cannot remove 'folder': Is a directory".
+
+
+
+
+
+
+
+
+
+
+
+    ln-================================================================================
+EXPLANATION: -n Aur -b Options (Hinglish Me)
+================================================================================
+
+TERMS CLEAR KAR LETE HAIN:
+  * SOURCE      --> Aapki purani/existing file ya folder (jiska link banana hai).
+  * DESTINATION --> Naya link / shortcut jo aap banane ja rahe ho.
+
+--------------------------------------------------------------------------------
+1. -n OPTION (--no-dereference)
+--------------------------------------------------------------------------------
+PROBLEM (Bina -n ke kya hota hai?):
+  Maan lo aapka DESTINATION ek Symbolic Link hai jo kisi FOLDER ko point kar raha 
+  hai.
+
+  Agar aap bina -n ke ye command chalate ho:
+    $ ln -sf SOURCE DESTINATION
+
+  To Linux kya sochega? "Arey, DESTINATION to ek folder hai! Chalo nayi link ko 
+  is folder KE ANDAR daal dete hain!"
+  
+  --> RESULT: DESTINATION link update nahi hota, balki us folder ke andar ek 
+      nayi file ban jaati hai! (Ye ek common bug hai).
+
+SOLUTION (-n lagane se kya hota hai?):
+  -n flag Linux ko bolta hai: "DESTINATION ko normal FILE ki tarah treat karo, 
+  chahe wo kisi folder ki taraf point hi kyu na kar raha ho!"
+
+  $ ln -sfn SOURCE DESTINATION
+
+  --> RESULT: Ab Linux DESTINATION ko folder nahi samjhega. Wo purane 
+      DESTINATION link ko hata kar sidhe naye SOURCE se link kar dega.
+
+--------------------------------------------------------------------------------
+2. -b OPTION (--backup)
+--------------------------------------------------------------------------------
+PROBLEM (Bina -b ke kya hota hai?):
+  Jab aap `-f` (force) use karte ho aur DESTINATION naam ki file pehle se exist 
+  karti hai, to purani DESTINATION file PERMANENTLY DELETE ho jaati hai.
+
+SOLUTION (-b lagane se kya hota hai?):
+  -b flag bolta hai: "Purani DESTINATION file ko delete karne se pehle uski 
+  ek BACKUP COPY bana lo!"
+
+  Command:
+    $ ln -sfb SOURCE DESTINATION
+
+  --> RESULT: 
+      1. Purani DESTINATION file ka naam badal kar DESTINATION~ (backup) ho jayega.
+      2. Naya DESTINATION link ban jayega jo SOURCE ko point karega.
+      3. Aapka purana data safe rahega!
+
+--------------------------------------------------------------------------------
+QUICK RECAP (HINGLISH SUMMARY):
+--------------------------------------------------------------------------------
+  * -f  --> Purane DESTINATION ko jabardasti uda kar naya link banao.
+  * -n  --> Agar DESTINATION kisi folder ka link hai, to uske andar mat ghuso, 
+            DESTINATION link ko hi update karo.
+  * -b  --> Purane DESTINATION ko udane se pehle backup copy (DESTINATION~) banao.
+  * -sfn --> Production aur deployment me sabse zyaada use hone wali combination!
+================================================================================
+
+
+
+
+
+stat
+stat -c "Inode: %i | Links: %h" version/v1.txt
+Commonly Used Format Codes for -c:
+%n = File Name
+
+%s = Total size in bytes
+
+%a = Octal permission mode (e.g., 755)
+
+%A = Human-readable permissions (e.g., -rw-r--r--)
+
+%i = Inode number
+
+%h = Number of hard links
+
+%x =accesstime
+
+%y = Last modification time (mtime)
+
+%z = change in permission
+
+
+
+
+
+
+tree
+================================================================================
+COMMAND: tree (Display Directory Structure in Visual Tree Format)
+================================================================================
+
+DESCRIPTION:
+  Recursively lists files and directories in a clean, visual tree structure. 
+  It shows exact folder depth, nested files, and total counts.
+
+NOTE:
+  If 'tree' is not pre-installed, install it via:
+  $ sudo apt install tree       (Ubuntu/Debian)
+  $ brew install tree           (macOS)
+
+BASIC SYNTAX:
+  $ tree [OPTIONS] [DIRECTORY]
+
+--------------------------------------------------------------------------------
+KEY OPTIONS & FLAGS (CATEGORIZED):
+--------------------------------------------------------------------------------
+
+1. DEPTH & FILTERING (Sabse Zyaada Use Hone Wale Flags)
+   -L LEVEL      Limits display depth to N levels deep. (e.g., -L 2)
+   -d            Lists DIRECTORIES ONLY (files skip ho jate hain).
+   -a            Includes ALL files, including hidden files (dotfiles like .git, .env).
+   -I PATTERN    Ignores files/folders matching a pattern. (e.g., -I "node_modules|*.log")
+   -P PATTERN    Includes ONLY files matching a pattern. (e.g., -P "*.txt")
+   --gitignore   Ignores files listed in your .gitignore file automatically.
+   --prune       Makes tree ignore empty directories.
+
+2. FILE DETAILS & PERMISSIONS
+   -f            Prints FULL PATH prefix for each file.
+   -p            Prints file permissions (e.g., [-rw-r--r--]).
+   -u / -g       Prints USER owner (-u) or GROUP owner (-g).
+   -h            Prints human-readable file sizes (e.g., 1K, 234M, 2G).
+   -s            Prints file size in bytes.
+   -D            Prints last modification date (mtime).
+
+3. OUTPUT & EXPORT FORMATS
+   -o FILE       Outputs the tree result to a text file instead of printing on terminal.
+   -J            Outputs structure as JSON.
+   -H BASEHREF   Outputs structure as an HTML document with links.
+   -X            Outputs structure as XML.
+
+--------------------------------------------------------------------------------
+PRACTICAL EXAMPLES:
+--------------------------------------------------------------------------------
+
+  1. Restrict tree to 2 levels deep (Must-know for huge projects):
+     $ tree -L 2
+
+  2. Show hidden files and human-readable sizes:
+     $ tree -ah
+
+  3. Show only directories (No files):
+     $ tree -d
+
+  4. Ignore heavy folders like node_modules or .git:
+     $ tree -I "node_modules|.git|build"
+
+  5. Show permissions, owner, and human-readable size:
+     $ tree -phu
+
+  6. Export tree output to a markdown/text file:
+     $ tree -L 3 -o project_structure.txt
+
+--------------------------------------------------------------------------------
+QUICK CHEAT SHEET (HINGLISH):
+--------------------------------------------------------------------------------
+  * tree -L 2              --> Sirf 2 levels tak folder structure dekho.
+  * tree -d                --> Sirf folders dikhao, files chhupa do.
+  * tree -I "node_modules" --> Heavy node_modules ko skip karke clean tree dekho.
+  * tree --gitignore       --> Code repository me git ignored files ko mat dikhao.
+================================================================================

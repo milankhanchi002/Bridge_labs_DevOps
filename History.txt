@@ -1,0 +1,180 @@
+25-Jul1  cat file1.txt
+    2  rm file1.txt
+    3  cat file1.txt
+    4  cat file1.txt > "hi how r u ?"
+    5  cat > "hi" file1.txt
+    6  cat >> "hi" file1.txt
+    7  touch file1.txt
+    8  cat > "hi" file1.txt
+    9  cat file1.txt
+   10  echo > "hi" file1.txt
+   11  cat file1.txt
+   12  ls
+   13  echo "hi" > file1.txt
+   14  cat file.txt
+   15  cat file1.txt
+   16  echo "hi hello" > file1.txt
+   17  echo "hi" > file1.txt
+   18  echo "hi hello" >> file1.txt
+   19  cat file1.txt
+   20  cat "ji" > file1.txt
+   21  cat > file1.txt < EOF
+   22  cat > file1.txt < EOF "hello my name is mayank garg" EOF
+   23  cat > file1.txt << EOF "hello my name is mayank garg" EOF
+   24  exit
+   25  milan khanchi
+   26  EOF
+   27  cat > file1.txt << EOF
+   28  "mayank garg"
+   29  "milan khanchi"
+   30  EOF
+   31  cat file1.txt 
+   32  cd /etc
+   33  ls -l
+   34  ls
+   35  cd /var
+   36  ls
+   37  cd /log
+   38  cd log
+   39  ls
+   40  cd ..
+   41  cd cache
+   42  ls
+   43  cd /dev
+   44  ls
+   45  cd /bin
+   46  ls
+   47  cd /lib
+   48  ls
+   49  cd module
+   50  cd modules
+   51  ls
+   52  cd 7.0.0-14-generic/
+   53  ls
+   54  cd /boot
+   55  ls
+   56  cd /dev
+   57  ls
+   58  clear
+   59  cd
+   60  pwd
+   61  ls
+   62  ls -l
+   63  cd /boot
+   64  ls
+   65  ls -la
+   66  cd 
+   67  cd ~
+   68  pwd
+   69  ln 
+   70  ls
+   71  ls -l
+   72  ls -h
+   73  ls -lh
+   74  ls -n
+   75  ls -g
+   76  ls -o
+   77  ls -R
+   78  ls -r
+   79  ls -l
+   80  ls
+   81  ls -s
+   82  ls -S
+   83  ls -sS
+   84  ls -t
+   85  ls -x
+   86  find /home ".*txt"
+   87  find /home "*.txt"
+   88  find /home -name "*.txt"
+   89  find /home -iname "*.txt"
+   90  ls
+   91  pwd
+   92  mkdir -p project/{auth.java,security.java,environment.java/{dev.java}}
+   93  cd project/
+   94  ls -lR
+   95  tree
+   96  cd ..
+   97  tree
+   98  cd project
+   99  tree
+  100  mkdir -p project/{auth.java,security.java,environment.java/{dev.java,hi.java}}
+  101  tree
+  102  mkdir -p Terraform/{module,environment/{dev,qa,prod},scripts
+  103  tree
+  104  cd ..
+  105  mkdir -p Terraform/{module,environment/{dev,qa,prod},scripts
+  106  tree
+  107  cd Terraform/
+  108  tree
+  109  cd `
+  110  pwd
+  111  ls -l
+  112  cd web_project/
+  113  tree
+  114  ln -s version/v1.txt shortcut/v1softlink.txt
+  115  ls -li
+  116  ls version/ -li
+  117  rm version/v1.txt
+  118  ls version/
+  119  cat v1hardlink.txt
+  120  cat version/v1hardlink.txt
+  121  cat shortcut/v1softlink.txt
+  122  cat shortcut/v1softlink.txt 
+  123  touch version/v2.txt
+  124  echo "version 2.0" > version/v2.txt 
+  125  cat version/v2.txt 
+  126  ln -sfb version/v2.txt shortcut/v1softlink.txt 
+  127  ls shortcut/v1softlink.txt
+  128  ls shortcut/
+  129  mkdir current_version
+  130  ln -s version/ current_version/
+  131  ln -sfn shortcut/ current_version/
+  132  tree
+  133  rm -rf current_version
+  134  ln -s version/ current_version/
+  135  ln -sfn shortcut/ current_version/
+  136  tree
+  137  ln -s version/ current_version
+  138  ln -sfn shortcut/ current_version
+  139  tree
+  140  ln -sf version/ current_version
+  141  tree
+  142  ln -sfn version/ current_version
+  143  tree
+  144  stat v1
+  145  stat version/v2.txt 
+  146  stat "%n" version/v2.txt 
+  147  stat -c "%n" version/v2.txt 
+  148  stat -c "%x" version/v2.txt 
+  149  stat -c "%y" version/v2.txt 
+  150  stat -c "%z" version/v2.txt 
+  151  stat -c "%a" version/v2.txt 
+  152  stat -c "%A" version/v2.txt 
+  153  tree
+  154  tree -ah
+  155  tree -ph
+  156  tree -phu
+  157  cat version/v2.txt 
+  158  echo "hi" >> version/v2.txt 
+  159  sed version/v2.txt 
+  160  sed -e version/v2.txt 
+  161  sed -i version/v2.txt 
+  162  vi version/v2.txt 
+  163  cat version/v2.txt 
+  164  vi version/v2
+  165  vi version/v2.txt 
+  166  cat -h version/v2.txt 
+  167  cat -b version/v2.txt 
+  168  cat -n version/v2.txt 
+  169  vi version/v2.txt
+  170  cd version/
+  171  less v2.txt 
+  172  man less 
+  173  tree
+  174  cd ..
+  175  tree
+  176  tree -L 2 -o
+  177  tree -L 2 -o projectstructure.txt
+  178  cat projectstructure.txt 
+  179  cd 
+  180  history
