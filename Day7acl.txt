@@ -1,0 +1,118 @@
+setfacl
+getfacl
+setfattr
+getfattr
+
+
+===============================================================================
+                     LINUX ACL & EXTENDED ATTRIBUTES GUIDE
+===============================================================================
+
+1. COMMAND OVERVIEW & DEFINITIONS
+-------------------------------------------------------------------------------
+* Extended Attributes (xattr):
+  Key-Value pairs attached to files/directories stored in extra disk blocks.
+  Syntax format: namespace.key="value"
+
+* Namespaces:
+  - user.*     : Custom user-defined metadata/tags (e.g., user.department)
+  - system.*   : System OS-level features (e.g., POSIX ACL storage)
+  - security.* : Security modules (e.g., SELinux security contexts)
+  - trusted.*  : Kernel/Root level attributes only
+
+* Tools:
+  - getfacl / setfacl  : High-level smart tools for managing POSIX ACLs.
+  - getfattr / setfattr: Low-level generic tools for reading/writing raw xattrs.
+
+
+2. POSIX ACL COMMANDS (getfacl & setfacl)
+-------------------------------------------------------------------------------
+Syntax:
+  setfacl [options] [rule] [file_or_directory]
+  getfacl [options] [file_or_directory]
+
+Rules Format:
+  u:username:rwx    (User permission)
+  g:groupname:rwx   (Group permission)
+  m::rwx            (Mask limit)
+  o::rwx            (Others permission)
+
+Common Options & Flags:
+  -m  : Modify existing ACL entries.
+  -x  : Remove specific ACL entry.
+  -b  : Base / Remove ALL extended ACL entries.
+  -d  : Default ACL rules (applied to directories for inheritance).
+  -k  : Kill / Remove default ACL rules from a directory.
+  -R  : Apply operations recursively.
+  --restore=file : Restore ACL configuration from a text dump file.
+
+Examples:
+  # Grant user 'nobody' read and write permissions:
+  setfacl -m u:nobody:rw- report.txt
+
+  # Set max effective permissions limit using Mask:
+  setfacl -m m::r-- report.txt
+
+  # Set default inheritance rule on a directory for new files:
+  setfacl -d -m g:sudo:rwx /var/shared_dir/
+
+  # View ACL configuration:
+  getfacl report.txt
+
+  # Remove user 'nobody' entry from file:
+  setfacl -x u:nobody report.txt
+
+  # Clear all extended ACL entries:
+  setfacl -b report.txt
+
+
+3. EXTENDED ATTRIBUTE COMMANDS (getfattr & setfattr)
+-------------------------------------------------------------------------------
+Syntax:
+  setfattr [options] -n [attribute_name] -v [value] [file]
+  getfattr [options] [file]
+
+Common Options & Flags:
+  -n name  : Specify attribute key name (must start with namespace e.g., user.)
+  -v val   : Specify value for the attribute key
+  -x name  : Remove specified attribute key
+  -d       : Dump / Display all user attributes and values
+  -m regex : Match attribute keys against a regex pattern ("-" matches all)
+
+Examples:
+  # Set custom user metadata:
+  setfattr -n user.project -v "PropertyHub" config.json
+  setfattr -n user.department -v "Finance" config.json
+
+  # Read specific attribute value:
+  getfattr -n user.project config.json
+
+  # Dump all user attributes on a file:
+  getfattr -d config.json
+
+  # View all attributes across ALL namespaces (including system ACL keys):
+  getfattr -m "-" -d report.txt
+
+  # Remove a custom attribute:
+  setfattr -x user.department config.json
+
+
+4. QUICK CHEAT SHEET MATRIX
+-------------------------------------------------------------------------------
+Command     Flag      Purpose / Function
+-------------------------------------------------------------------------------
+setfacl     -m        Modify/Add ACL entry
+setfacl     -x        Remove specific ACL entry
+setfacl     -b        Clear all extended ACLs
+setfacl     -d        Apply rule as Default (Directory inheritance)
+setfacl     -k        Remove default ACLs
+setfacl     -R        Apply operations recursively
+getfacl     -R        Read ACLs recursively
+
+setfattr    -n        Specify attribute name/key
+setfattr    -v        Specify attribute value
+setfattr    -x        Remove/Delete attribute key
+getfattr    -n        Get specific attribute value
+getfattr    -d        Dump all key-value pairs
+getfattr    -m "-"    Match and display ALL namespaces
+===============================================================================

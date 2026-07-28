@@ -1,0 +1,99 @@
+🎯 Unix File Management Assignment
+Scenario
+You are setting up a workspace for a backend engineering project. Follow the tasks step by step in your terminal to complete the directory architecture, manage files, and clean up workspace artifacts.
+
+Part 1: Navigation & Directory Creation
+Locate Workspace: Display your current working directory path to confirm where you are starting.
+
+Create Structure: Create a directory named project_workspace. Inside it, create three subdirectories at once:
+
+src
+
+docs
+
+backup
+
+Navigate: Change your directory into project_workspace.
+
+Sub-directories: Navigate into src and create two additional folders: controllers and models.
+
+Part 2: File Creation & Inspection
+Create Files: Inside project_workspace/src, create two empty files: app.java and config.json.
+
+Create Documentation: Inside project_workspace/docs, create a file named notes.txt.
+
+Inspect File Metadata: Check the detailed file metadata (size, access times, inode, permissions) for app.java.
+
+View Architecture: Run a single command from inside project_workspace to display the entire directory tree structure including subfolders.
+
+Part 3: Copying, Moving & Renaming
+Backup Source Files: Copy app.java from src into the backup directory.
+
+Move Files: Move notes.txt from docs into project_workspace root directory.
+
+Rename File: Rename notes.txt to README.md.
+
+Part 4: Links (Hard & Soft)
+Symbolic Link (Soft Link): Create a soft link named app_shortcut.java in project_workspace that points to src/app.java.
+
+Hard Link: Create a hard link named config_hardlink.json in backup pointing to src/config.json.
+
+Verify Links: Use the command that reveals file details to verify the link count and target paths for both created links.
+
+Part 5: Cleanup & Removal
+Delete File: Remove config.json inside src. Check what happens to config_hardlink.json in backup.
+
+Remove Empty Directory: Remove the docs directory using the command specifically built for empty directories.
+
+Recursive Removal: Force-remove the entire backup folder and all of its contents in one command.
+
+
+
+
+
+
+
+
+
+Scenario
+You are investigating a server log file (server.log) and modifying a environment configuration file (config.env) for an application deployment.
+
+Part 1: Setup Workspace & Initial File Creation
+Quick Creation: Use nano to create a file named config.env. Add the following three lines and save it:
+
+Plaintext
+PORT=8080
+ENV=production
+DEBUG=false
+Generate Log File: Run this command in your terminal to quickly generate a 30-line dummy log file named server.log:
+
+Bash
+for i in {1..30}; do echo "2026-07-26 10:00:$i INFO User session $i created successfully" >> server.log; done
+Part 2: File Viewing & Reading Operations
+Dump Content: Display the entire contents of config.env directly to the terminal output.
+
+Read Top Section: Display only the first 5 lines of server.log.
+
+Read Bottom Section: Display only the last 5 lines of server.log.
+
+Paginated Reading (Basic): Open server.log with a simple pager that advances page-by-page when hitting Spacebar.
+
+Advanced Search & Scroll: Open server.log using the tool that allows backward scrolling and live searching.
+
+Live Stream: Run a command that continuously watches server.log for new incoming log entries in real-time.
+
+Part 3: Text Editing with Vim
+Open Configuration: Open config.env using vim.
+
+Edit Port: Switch to Insert Mode, change PORT=8080 to PORT=9090.
+
+Add Parameter: Add a new line at the bottom: DATABASE_URL=jdbc:postgresql://localhost:5432/mydb.
+
+Save & Exit: Return to Command Mode and save the changes while exiting vim.
+
+Verify Modification: Concatenate config.env to confirm the updates were saved.
+
+Part 4: Emergency Discarding in Vim
+Accidental Edit: Open config.env again in vim. Delete a line or type random characters into the file.
+
+Abort Changes: Exit vim without saving any of the broken changes.

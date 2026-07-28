@@ -24,3 +24,113 @@ Options:
   -u                      (ignored)
   -h, --help              Print help
   -V, --version           Print version
+
+
+
+
+
+  less
+
+1. OVERVIEW
+-------------------------------------------------------------------------------
+'less' is a terminal pager utility used to view the contents of a text file line 
+by line or page by page. Unlike traditional text editors (such as vi or nano), 
+'less' does not load the entire file into memory before starting, making it 
+extremely fast when opening large log files or large datasets.
+
+Famous slogan: "less is more" (as it provides enhanced features over the older 
+'more' pager utility).
+
+
+2. BASIC SYNTAX
+-------------------------------------------------------------------------------
+    less [options] filename
+
+Examples:
+    less application.log
+    less -N system.log
+    cat huge_file.txt | less
+
+
+3. COMMAND-LINE OPTIONS (FLAGS)
+-------------------------------------------------------------------------------
+Flag       Description
+-------------------------------------------------------------------------------
+-N         Display line numbers on the left margin.
+-S         Chop (truncate) long lines instead of wrapping them.
+           Use left/right arrow keys to scroll horizontally.
+-i         Case-insensitive search (unless search term contains uppercase).
+-I         Case-insensitive search in all conditions.
+-X         Disable terminal initialization (keeps file content on screen after exit).
+-M         Show detailed prompt at the bottom (byte count, line number, percentage).
+-E         Automatically exit the first time end-of-file is reached.
++G         Open file and instantly jump to the end of the file.
++/pattern  Open file and immediately jump to the first occurrence of 'pattern'.
++F         Open file in follow mode (similar to tail -f).
+
+
+4. NAVIGATION SHORTCUTS (INSIDE 'less')
+-------------------------------------------------------------------------------
+Movement           Keys
+-------------------------------------------------------------------------------
+Scroll Down 1 Line  Enter, j, Down Arrow, e, or Ctrl+N
+Scroll Up 1 Line    k, Up Arrow, y, or Ctrl+P
+Page Down (Full)    Spacebar, Page Down, or Ctrl+F
+Page Up (Full)      b, Page Up, or Ctrl+B
+Half Page Down      d or Ctrl+D
+Half Page Up        u or Ctrl+U
+Jump to Beginning   g or Home
+Jump to End         G or End
+Horizontal Scroll   Right Arrow (with -S flag), Left Arrow
+
+
+5. SEARCHING & PATTERN MATCHING
+-------------------------------------------------------------------------------
+Action             Command
+-------------------------------------------------------------------------------
+Search Forward     /pattern  (then press Enter)
+Search Backward    ?pattern  (then press Enter)
+Next Match         n
+Previous Match     N
+Highlight Matches  All matches are automatically highlighted.
+Clear Highlight    Press Esc then u (or type :& then Enter)
+
+
+6. ADVANCED FEATURES & WORKFLOWS
+-------------------------------------------------------------------------------
+A. Real-Time Log Monitoring (Tail Mode):
+   - Type 'Shift + F' while inside less to continuously stream new lines.
+   - Press 'Ctrl + C' to stop following and resume normal browsing.
+   - Alternatively, start directly with: less +F /var/log/syslog
+
+B. Quick Edit in VI / VIM:
+   - Press 'v' while viewing a file in less.
+   - It automatically opens the file in your default editor (vi/vim) at the 
+     exact line position.
+   - Saving and quitting the editor returns you immediately to less.
+
+C. Viewing Compressed Files:
+   - Use 'zless' to view gzip-compressed log files directly without extracting:
+     zless /var/log/nginx/access.log.1.gz
+
+D. Piping Command Output:
+   - Pipe large outputs into less to browse easily:
+     ps aux | less
+     journalctl -u docker | less
+     git log --oneline --graph | less
+
+E. Environment Variable (Default Options):
+   - You can set permanent flags using the LESS environment variable in your shell profile (~/.bashrc or ~/.zshrc):
+     export LESS="-N -S -i"
+
+
+7. QUICK SUMMARY CHEAT SHEET
+-------------------------------------------------------------------------------
+  Action                    Shortcut
+  ----------------------------------
+  Quit less                 q
+  Help screen               h
+  Line numbers on/off       -N (typed while inside less)
+  Toggle line wrapping      -S (typed while inside less)
+  Jump to line 150          150g or :150
+===============================================================================

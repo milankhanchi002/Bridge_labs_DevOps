@@ -1,0 +1,665 @@
+Phase 3 — Searching & Text Processing
+find
+locate
+grep
+egrep
+sed
+awk
+sort
+uniq
+cut
+paste
+tr
+wc
+
+
+
+find
+===============================================================================
+                  MOST COMMONLY USED 'find' COMMANDS (CHEAT SHEET)
+===============================================================================
+
+1. BASIC SYNTAX
+-------------------------------------------------------------------------------
+    find [path] [expression/options] [action]
+
+Examples:
+    find . -name "*.java"
+    find /var/log -type f -name "*.log"
+
+
+2. FINDING BY NAME & EXTENSION
+-------------------------------------------------------------------------------
+* Find files matching exact name in current directory:
+    find . -name "app.java"
+
+* Find files matching extension (Case-Insensitive):
+    find . -iname "*.JAVA"
+
+* Find files matching multiple patterns:
+    find . -type f \( -name "*.java" -o -name "*.xml" \)
+
+
+3. FINDING BY FILE TYPE (-type)
+-------------------------------------------------------------------------------
+* Find directories only:
+    find . -type d -name "controllers"
+
+* Find regular files only:
+    find . -type f -name "*.json"
+
+* Find symbolic links only:
+    find . -type l
+
+
+4. FINDING BY FILE SIZE (-size)
+-------------------------------------------------------------------------------
+* Find files larger than 10 Megabytes (+10M):
+    find . -type f -size +10M
+
+* Find files smaller than 1 Megabyte (-1M):
+    find . -type f -size -1M
+
+* Find empty files/directories:
+    find . -empty
+
+
+5. FINDING BY MODIFICATION TIME (-mtime / -mmin)
+-------------------------------------------------------------------------------
+* Find files modified in the last 24 hours (1 day):
+    find . -type f -mtime -1
+
+* Find files modified more than 7 days ago:
+    find . -type f -mtime +7
+
+* Find files modified in the last 30 minutes:
+    find . -type f -mmin -30
+
+
+6. FINDING BY PERMISSIONS & OWNERSHIP (-perm / -user)
+-------------------------------------------------------------------------------
+* Find files with specific permissions (e.g., 777):
+    find . -type f -perm 777
+
+* Find files owned by a specific user:
+    find /home -user milan
+
+
+7. EXECUTING ACTIONS ON FOUND FILES (-exec / -delete)
+-------------------------------------------------------------------------------
+* Delete all empty files automatically:
+    find . -type f -empty -delete
+
+* Change permissions of all directories to 755:
+    find . -type d -exec chmod 755 {} +
+
+* Copy all .log files to a backup folder:
+    find . -type f -name "*.log" -exec cp {} ./backup/ \;
+
+* Search for text inside matched files (combining find + grep):
+    find . -type f -name "*.java" -exec grep -H "SpringApplication" {} +
+
+
+8. LIMITING SEARCH DEPTH (-maxdepth)
+-------------------------------------------------------------------------------
+* Search only in the current directory (do not enter subfolders):
+    find . -maxdepth 1 -name "*.txt"
+
+* Search up to 2 subfolder levels deep:
+    find . -maxdepth 2 -type f
+===============================================================================
+
+
+
+
+
+
+
+locate
+===============================================================================
+                COMPLETE GUIDE TO THE 'locate' COMMAND & COMPARISON
+===============================================================================
+
+1. OVERVIEW
+-------------------------------------------------------------------------------
+'locate' is a fast, index-based file searching utility in Linux/Unix systems[cite: 3]. 
+Unlike 'find', which scans the file system in real-time, 'locate' queries a 
+pre-built database (usually updated daily via cron or manually via 'updatedb')[cite: 3].
+
+Key Advantage: Extremely fast search speeds, even across millions of files[cite: 3].
+
+
+2. BASIC SYNTAX
+-------------------------------------------------------------------------------
+    locate [options] pattern[cite: 3]
+
+Examples:
+    locate app.java[cite: 3]
+    locate "*.log"[cite: 3]
+
+
+3. COMMONLY USED OPTIONS (FLAGS)
+-------------------------------------------------------------------------------
+Flag       Description
+-------------------------------------------------------------------------------
+-i         Case-insensitive search (matches App.java, app.java, APP.JAVA)[cite: 3].
+-n [N]     Limit the number of results to N (e.g., locate -n 5 *.conf)[cite: 3].
+-c         Count matching files instead of printing file paths[cite: 3].
+-e         Verify file existence (only show files that currently exist on disk)[cite: 3].
+-b         Basename search (match pattern only against the filename, not full path)[cite: 3].
+-r [REGEX] Search using basic regular expressions[cite: 3].
+
+
+4. UPDATING THE DATABASE (CRITICAL)
+-------------------------------------------------------------------------------
+Since 'locate' relies on a database, newly created files won't show up immediately[cite: 3]. 
+To manually update the database before searching, run:
+
+    sudo updatedb[cite: 3]
+
+
+5. PRACTICAL REAL-WORLD WORKFLOWS
+-------------------------------------------------------------------------------
+* Update database manually:
+    sudo updatedb[cite: 3]
+
+* Ignore deleted file phantom matches:
+    locate -e my_old_file.txt[cite: 3]
+
+* Quick exact filename matching:
+    locate -b "\server.log"[cite: 3]
+
+
+6. WHEN TO USE 'find' VS 'locate'
+-------------------------------------------------------------------------------
+Requirement / Scenario        Use 'find'                     Use 'locate'
+-------------------------------------------------------------------------------
+Search Speed                  Slower (scans disk)            Instant (indexes DB)[cite: 3]
+Real-time Accuracy            100% Accurate                  Depends on updatedb[cite: 3]
+Search by Metadata            Yes (size, permissions, time)  No (names/paths only)[cite: 3]
+Execute Actions (-exec)       Yes (run rm, cp, chmod, etc.)  No[cite: 3]
+Newly Created Files           Found immediately              Requires 'updatedb'[cite: 3]
+Locate System Configs/Binaries Slower                        Instant & Easy
+===============================================================================
+
+
+
+
+
+
+
+
+
+
+grep===============================================================================
+                    COMPLETE GUIDE TO THE 'grep' COMMAND
+===============================================================================
+
+1. OVERVIEW
+-------------------------------------------------------------------------------
+'grep' (Global Regular Expression Print) is used to search for specific text, 
+patterns, or regular expressions inside files or standard command output.
+
+Slogan/Mnemonic: Search text line-by-line and print matching lines.
+
+
+2. BASIC SYNTAX
+-------------------------------------------------------------------------------
+    grep [options] "pattern" filename
+
+Examples:
+    grep "ERROR" application.log
+    grep -i "exception" server.log
+    cat system.log | grep "failed"
+
+
+3. COMMONLY USED OPTIONS (FLAGS)
+-------------------------------------------------------------------------------
+Flag       Description
+-------------------------------------------------------------------------------
+-i         Case-insensitive search (matches Error, error, ERROR).
+-r / -R    Recursive search through all subdirectories.
+-n         Display line numbers alongside matching lines.
+-c         Count the total number of matching lines (does not print lines).
+-v         Invert match (selects lines that DO NOT match the pattern).
+-w         Match whole word only (e.g., 'grep -w "user"' won't match 'username').
+-l         List only filenames containing matches (not the matching lines).
+-L         List filenames that DO NOT contain the pattern.
+-o         Print ONLY the exact matched text, not the entire line.
+
+
+4. CONTEXT CONTROL FLAGS
+-------------------------------------------------------------------------------
+Show surrounding lines around a match (useful for log debugging):
+
+-A [N]     Show N lines AFTER the match (After context).
+           Example: grep -A 3 "ERROR" app.log
+
+-B [N]     Show N lines BEFORE the match (Before context).
+           Example: grep -B 2 "ERROR" app.log
+
+-C [N]     Show N lines BEFORE and AFTER the match (Context).
+           Example: grep -C 2 "ERROR" app.log
+
+
+5. PRACTICAL REAL-WORLD WORKFLOWS
+-------------------------------------------------------------------------------
+A. Recursive Search in Codebase:
+   Find every Java file containing 'SpringApplication':
+   grep -rn --include="*.java" "SpringApplication" .
+
+B. Filter Active Configurations (Ignore Comments & Empty Lines):
+   grep -v -e "^#" -e "^$" application.properties
+
+C. Combining with Pipe (|):
+   Inspect running processes for a specific service:
+   ps aux | grep java
+
+D. Count Occurrences of Errors:
+   grep -c "500 Internal Server Error" access.log
+
+
+6. REGULAR EXPRESSION BASICS IN GREP
+-------------------------------------------------------------------------------
+Pattern     Description
+-------------------------------------------------------------------------------
+^pattern    Matches lines STARTING with 'pattern'.
+pattern$    Matches lines ENDING with 'pattern'.
+[a-z]       Matches any single character in range a to z.
+.           Matches any single character.
+.*          Matches any string of characters.
+egrep / -E  Enables Extended Regular Expressions (e.g., OR operations '|').
+            Example: grep -E "ERROR|CRITICAL" application.log
+
+
+7. QUICK SUMMARY CHEAT SHEET
+-------------------------------------------------------------------------------
+  Action                                Command
+  -----------------------------------------------------------------------------
+  Case-insensitive search               grep -i "text" file.txt
+  Search recursively with line numbers   grep -rn "text" /path/to/dir
+  Count matches                         grep -c "text" file.txt
+  Exclude matching lines                grep -v "text" file.txt
+===============================================================================
+
+
+
+
+
+
+
+
+
+egrep===============================================================================
+                    COMPLETE GUIDE TO THE 'egrep' COMMAND
+===============================================================================
+
+1. OVERVIEW & MODERN STATUS
+-------------------------------------------------------------------------------
+'egrep' stands for "Extended Global Regular Expression Print". 
+
+IMPORTANT NOTE:
+'egrep' is deprecated on most modern Linux/Unix distributions. Today, running 
+'egrep' is simply an alias for 'grep -E'. It is recommended to use 'grep -E' 
+in modern scripts and daily terminal usage.
+
+Summary: 
+  egrep == grep -E (Extended Regular Expressions)
+
+
+2. BASIC SYNTAX
+-------------------------------------------------------------------------------
+    egrep "pattern" filename
+    # Equivalent modern syntax:
+    grep -E "pattern" filename
+
+Examples:
+    egrep "ERROR|WARN|CRITICAL" application.log
+    grep -E "([0-9]{3}-){2}[0-9]{4}" contacts.txt
+
+
+3. WHY USE EXTENDED REGULAR EXPRESSIONS (ERE)?
+-------------------------------------------------------------------------------
+Standard 'grep' (Basic Regular Expressions / BRE) requires you to escape meta-
+characters like '|', '+', '?', '(', and ')' with backslashes to use them as 
+operators:
+    grep "ERROR\|WARN" app.log       # Standard grep (messy backslashes)
+
+'egrep' (Extended Regular Expressions / ERE) treats these meta-characters as 
+special operators by default, making complex regex much cleaner:
+    egrep "ERROR|WARN" app.log        # Clean and readable
+
+
+4. KEY ERE OPERATORS SUPPORTED BY EGREP
+-------------------------------------------------------------------------------
+Operator   Description                     Example
+-------------------------------------------------------------------------------
+|          Logical OR                      egrep "cat|dog" file.txt
++          Match 1 or more times           egrep "go+l" (matches gol, goool)
+?          Match 0 or 1 time (optional)    egrep "colou?r" (matches color, colour)
+()         Group expressions               egrep "(error|warn)_code" app.log
+{n,m}      Interval quantifiers            egrep "[0-9]{3}" (matches 3 digits)
+
+
+5. PRACTICAL EXAMPLES
+-------------------------------------------------------------------------------
+A. Search for Multiple Log Levels (OR Operator):
+   egrep "ERROR|WARN|FATAL" /var/log/syslog
+
+B. Match Valid IPv4 Addresses (Quantifiers + Grouping):
+   grep -E "([0-9]{1,3}\.){3}[0-9]{1,3}" network.log
+
+C. Match Optional Characters:
+   egrep "http://|https://" links.txt
+   # Or simplified with optional 's':
+   grep -E "https?://" links.txt
+
+D. Combining with Standard Grep Flags:
+   egrep -rn -i "failed|unauthorized" /var/log/auth.log
+
+
+6. QUICK COMPARISON SUMMARY
+-------------------------------------------------------------------------------
+  Feature                   Standard grep          egrep / grep -E
+  -----------------------------------------------------------------------------
+  Logical OR                "cat\|dog"             "cat|dog"
+  Groupings                 "\(abc\)\+"            "(abc)+"
+  One or more (+)           "a\+"                  "a+"
+  Optional (?)              "a\?"                  "a?"
+  Intervals                 "a\{2,4\}"             "a{2,4}"
+===============================================================================
+
+
+
+
+
+
+
+
+===============================================================================
+                    COMPLETE GUIDE TO THE 'sed' COMMAND
+===============================================================================
+
+1. OVERVIEW
+-------------------------------------------------------------------------------
+'sed' stands for "Stream Editor". It is a powerful Unix/Linux utility used for 
+parsing and transforming text non-interactively. Unlike text editors like vi or 
+nano, 'sed' accepts input from standard input or files, applies a set of commands, 
+and outputs the modified result.
+
+It is ideal for automated scripts, fast search-and-replace operations, and stream 
+filtering.
+
+
+2. BASIC SYNTAX
+-------------------------------------------------------------------------------
+    sed [options] 'command' filename
+
+Examples:
+    sed 's/old/new/' config.txt
+    sed -n '1,10p' application.log
+    sed -i 's/PORT=8080/PORT=9090/g' .env
+
+
+3. FIND AND REPLACE (SUBSTITUTION)
+-------------------------------------------------------------------------------
+Syntax:
+    sed 's/pattern/replacement/flags' filename
+
+Common Examples:
+    # Replace first occurrence per line
+    sed 's/localhost/127.0.0.1/' config.txt
+
+    # Replace ALL occurrences per line (Global flag 'g')
+    sed 's/localhost/127.0.0.1/g' config.txt
+
+    # Case-insensitive replacement (Flag 'i')
+    sed 's/error/WARNING/gi' app.log
+
+    # Using custom delimiters (helpful for URLs/paths)
+    sed 's|http://localhost|https://prod.com|g' app.conf
+
+
+4. DELETING LINES ('d' COMMAND)
+-------------------------------------------------------------------------------
+    # Delete line number 5
+    sed '5d' file.txt
+
+    # Delete lines 5 through 10
+    sed '5,10d' file.txt
+
+    # Delete lines matching a pattern
+    sed '/DEBUG/d' app.log
+
+    # Delete comment lines starting with '#'
+    sed '/^#/d' config.txt
+
+    # Delete empty/blank lines
+    sed '/^$/d' file.txt
+
+
+5. PRINTING SPECIFIC LINES ('-n' AND 'p')
+-------------------------------------------------------------------------------
+By default, 'sed' prints every line. Use '-n' to suppress standard output and 
+'p' to print only specified lines:
+
+    # Print lines 10 to 20
+    sed -n '10,20p' server.log
+
+    # Print only lines containing "ERROR" (similar to grep)
+    sed -n '/ERROR/p' app.log
+
+
+6. IN-PLACE EDITING ('-i' FLAG)
+-------------------------------------------------------------------------------
+By default, 'sed' outputs changes to the terminal window (stdout) without 
+modifying the original file. Use '-i' to modify the file directly on disk:
+
+    # Overwrite original file
+    sed -i 's/old/new/g' file.txt
+
+    # Overwrite file AND save a backup (.bak)
+    sed -i.bak 's/old/new/g' file.txt
+
+Note for macOS (BSD sed):
+    Requires an extension argument when using -i:
+    sed -i '' 's/old/new/g' file.txt   (No backup)
+
+
+7. ADVANCED REGEX & CAPTURE GROUPS
+-------------------------------------------------------------------------------
+Use the '-E' flag for Extended Regular Expressions (+, ?, |, ()):
+
+    # Capture groups (\1, \2) to reuse matched values
+    sed -E 's/user=(.*)/username: \1/' config.txt
+
+    # Strip inline comments starting with '#'
+    sed -E 's/#.*//' config.txt
+
+
+8. QUICK SUMMARY CHEAT SHEET
+-------------------------------------------------------------------------------
+  Action                       Command
+  ---------------------------------------------------------------------------
+  Global find & replace        sed 's/old/new/g' file.txt
+  In-place editing             sed -i 's/old/new/g' file.txt
+  Delete matching lines        sed '/pattern/d' file.txt
+  Print line range             sed -n '5,15p' file.txt
+  Delete empty lines           sed '/^$/d' file.txt
+===============================================================================
+
+
+
+
+
+
+awk===============================================================================
+                    COMPLETE GUIDE TO THE 'awk' COMMAND
+===============================================================================
+
+1. OVERVIEW
+-------------------------------------------------------------------------------
+'awk' is a powerful data-driven programming language designed for pattern 
+scanning and text processing. Unlike 'sed' or 'grep', which process lines as 
+whole blocks of text, 'awk' treats text as structured columns (fields).
+
+It is especially useful for processing CSV files, TSVs, logs, and tabular system 
+outputs (like 'ps', 'df', or 'ls -l').
+
+
+2. BASIC SYNTAX
+-------------------------------------------------------------------------------
+    awk [options] 'pattern { action }' filename
+
+Examples:
+    awk '{print $1}' data.txt
+    awk -F',' '{print $1, $3}' users.csv
+    ps aux | awk '{print $1, $2, $11}'
+
+
+3. BUILT-IN VARIABLES
+-------------------------------------------------------------------------------
+Variable   Description
+-------------------------------------------------------------------------------
+$0         Represents the entire current line (record).
+$1, $2..   Represents Column 1, Column 2, Column 3, etc.
+$NF        Refers to the LAST column of the line (NF = Number of Fields).
+NR         Number of Records (the current line number).
+NF         Total number of fields in the current line.
+FS         Field Separator (default is space/tab).
+OFS        Output Field Separator (default is space).
+
+
+4. COMMON USE CASES & EXAMPLES
+-------------------------------------------------------------------------------
+A. Extracting Columns:
+   # Print first and last column of every line
+   awk '{print $1, $NF}' logs.txt
+
+   # Print line numbers along with the entire line
+   awk '{print NR, $0}' document.txt
+
+B. Working with CSV / Custom Separators (-F):
+   # Print usernames (col 1) and shells (col 7) from /etc/passwd
+   awk -F':' '{print $1, $7}' /etc/passwd
+
+   # Print product name and price from a comma-separated CSV
+   awk -F',' '{print $2, $4}' products.csv
+
+C. Conditional Filtering:
+   # Print lines where Column 3 is greater than 50
+   awk '$3 > 50' sales.txt
+
+   # Filter processes using more than 50% CPU
+   ps aux | awk '$3 > 50.0'
+
+   # Print lines between line 10 and line 20
+   awk 'NR>=10 && NR<=20' access.log
+
+D. Pattern Matching (Regex inside /.../):
+   # Print 1st and 2nd column only for lines containing "ERROR"
+   awk '/ERROR/ {print $1, $2}' app.log
+
+   # Match specific column against regex (Column 2 starts with 50)
+   awk '$2 ~ /^50/ {print $0}' server.log
+
+
+5. BEGIN AND END BLOCKS
+-------------------------------------------------------------------------------
+'BEGIN' executes BEFORE any lines are read.
+'END' executes AFTER all lines are processed.
+
+Example 1: Summing Numbers in a Column
+   awk '{sum += $2} END {print "Total Sum:", sum}' prices.txt
+
+Example 2: Adding Headers and Footers
+   awk 'BEGIN {print "USER\t\tPID"} {print $1 "\t\t" $2} END {print "--- END ---"}' process.txt
+
+
+6. QUICK COMPARISON SUMMARY
+-------------------------------------------------------------------------------
+  Tool    Main Purpose          Best Used For
+  -----------------------------------------------------------------------------
+  grep    Filtering             Finding lines matching a search term
+  sed     Transforming          Find-and-replace, deleting specific lines
+  awk     Analyzing/Reporting   Extracting columns, calculations, report formatting
+===============================================================================
+
+
+
+
+
+
+
+
+sortsort names.txt                      # Alphabetical sort
+sort -n scores.txt                  # Numerical sort
+sort -r names.txt                   # Reverse order
+sort -u emails.txt                  # Remove duplicates
+sort -k 3,3 -n data.txt             # Sort strictly by 3rd column numerically
+ls -lh | sort -k 5 -h               # Sort directory list by file size
+
+
+
+
+
+uniq
+sort file.txt | uniq                 # Remove duplicate lines
+sort file.txt | uniq -c              # Count frequency of each line
+sort file.txt | uniq -d              # Print only duplicate lines
+sort file.txt | uniq -u              # Print only unique lines
+sort file.txt | uniq -c | sort -nr   # Sort by frequency (highest first)
+
+
+
+
+cut-
+cut -d ',' -f 1 file.csv          # Print 1st field of CSV
+cut -d ':' -f 1,3 /etc/passwd     # Print 1st and 3rd fields separated by colon
+cut -f 2- data.tsv                # Print from 2nd field to the end (Tab-delimited)
+cut -c 1-8 file.txt               # Extract characters 1 through 8
+cut -c -10 file.txt              # Extract up to character 10
+cut -c 5- file.txt               # Extract from character 5 to end of line
+
+
+
+
+paste-
+paste file1.txt file2.txt          # Join 2 files side-by-side with tabs
+paste -d ',' file1.txt file2.txt   # Join 2 files with commas (CSV format)
+paste -s file.txt                  # Merge all lines of a file into 1 horizontal row
+paste -s -d ' ' file.txt           # Turn lines into a single space-separated string
+seq 10 | paste - -                 # Group standard input into 2 columns
+
+
+
+
+tr-
+tr 'a-z' 'A-Z'           # Uppercase all text
+tr 'A-Z' 'a-z'           # Lowercase all text
+tr -d '0-9'              # Remove all numbers
+tr -cd '0-9'             # Keep ONLY numbers (delete everything else)
+tr -s ' '                # Squeeze multiple spaces into one
+tr -s '\n'               # Remove blank lines by squeezing multiple newlines
+tr ' ' '\n'              # Replace spaces with newlines
+
+
+
+wc
+wc -l file.txt               # Count total lines
+wc -w file.txt               # Count total words
+wc -c file.txt               # Count total bytes
+wc -m file.txt               # Count total characters
+ls -1 | wc -l                # Count total files in current folder
+find . -type f | wc -l       # Count total files recursively
+grep -c "pattern" file.txt   # Faster alternative to 'grep | wc -l'
+
+
+
+
+id
+id                 # Complete user identity info
+id -u              # Print numeric UID only
+id -un             # Print username only
+id -Gn             # Print names of all groups the user belongs to
+id <username>      # Check details of another user

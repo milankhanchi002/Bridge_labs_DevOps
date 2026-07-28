@@ -1,0 +1,401 @@
+Phase 4 — Permissions & Users
+chmod
+chown
+chgrp
+umask
+id
+whoami
+su
+sudo
+useradd
+usermod
+userdel -r
+groupadd
+groupmod
+groupdel
+passwd
+
+
+
+
+
+chmod
+===============================================================================
+                    COMPLETE GUIDE TO THE 'chmod' COMMAND
+===============================================================================
+
+1. OVERVIEW
+-------------------------------------------------------------------------------
+'chmod' stands for "Change Mode". It is used in Linux/Unix systems to modify 
+the file mode bits, which control file and directory access permissions for:
+  - User/Owner (u)
+  - Group (g)
+  - Others (o)
+
+
+2. PERMISSION TYPES & NUMERIC VALUES
+-------------------------------------------------------------------------------
+Permission    Symbol    Binary Value    Meaning
+-------------------------------------------------------------------------------
+Read          r         4               View file content / list directory
+Write         w         2               Modify file / add-delete inside directory
+Execute       x         1               Run script/binary / cd into directory
+
+Calculation Examples:
+  rwx = 4 + 2 + 1 = 7  (Full Access)
+  rw- = 4 + 2 + 0 = 6  (Read + Write)
+  r-x = 4 + 0 + 1 = 5  (Read + Execute)
+  r-- = 4 + 0 + 0 = 4  (Read Only)
+  --- = 0 + 0 + 0 = 0  (No Access)
+
+
+3. NUMERIC MODE (OCTAL PERMISSIONS)
+-------------------------------------------------------------------------------
+Syntax:
+    chmod [owner][group][others] filename
+
+Common Configurations:
+    chmod 755 script.sh       # Owner: rwx (7), Group: r-x (5), Others: r-x (5)
+    chmod 644 document.txt    # Owner: rw- (6), Group: r-- (4), Others: r-- (4)
+    chmod 600 id_rsa          # Owner: rw- (6), Group: --- (0), Others: --- (0)
+    chmod 777 public_folder   # Everyone gets full rwx access (use with caution!)
+
+
+4. SYMBOLIC MODE (RELATIVE PERMISSIONS)
+-------------------------------------------------------------------------------
+Syntax:
+    chmod [who][operator][permission] filename
+
+Who:
+  u = user/owner
+  g = group
+  o = others
+  a = all (user + group + others)
+
+Operators:
+  + = Add permission
+  - = Remove permission
+  = = Set exact permission
+
+Examples:
+    chmod +x build.sh         # Make file executable for everyone
+    chmod u-x script.sh       # Remove execute permission from owner
+    chmod go+w shared.txt     # Add write permission for group & others
+    chmod u=rw,go=r file.txt  # Set owner to rw, group/others to r
+
+
+5. RECURSIVE PERMISSIONS (-R)
+-------------------------------------------------------------------------------
+To apply permissions to a directory and all files/folders inside it:
+
+    chmod -R 755 /var/www/html
+    chmod -R go-w my_project/
+
+
+6. CHEAT SHEET SUMMARY
+-------------------------------------------------------------------------------
+  Target Outcome                     Command
+  -----------------------------------------------------------------------------
+  Make script executable             chmod +x script.sh
+  Standard file permission           chmod 644 file.txt
+  Standard directory permission      chmod 755 folder/
+  Secure private file (e.g. SSH key) chmod 600 ~/.ssh/id_rsa
+  Recursive directory update         chmod -R 755 project/
+===============================================================================
+
+
+
+
+
+
+
+chown 
+===============================================================================
+                    COMPLETE GUIDE TO THE 'chown' COMMAND
+===============================================================================
+
+1. OVERVIEW
+-------------------------------------------------------------------------------
+'chown' stands for "Change Owner". It is a core Linux/Unix administrative utility 
+used to change the user ownership and group ownership of files and directories.
+
+Because changing ownership impacts file security and user access levels, 'chown' 
+typically requires root privileges (using 'sudo').
+
+
+2. BASIC SYNTAX
+-------------------------------------------------------------------------------
+    sudo chown [options] [NEW_OWNER][:NEW_GROUP] filename
+
+Examples:
+    sudo chown milan app.log
+    sudo chown milan:developers app.log
+    sudo chown :developers app.log
+
+
+3. COMMON SCENARIOS
+-------------------------------------------------------------------------------
+A. Change User Ownership Only:
+   sudo chown john document.txt
+   # Sets 'john' as the file owner. Group ownership remains unchanged.
+
+B. Change User and Group Ownership Simultaneously:
+   sudo chown john:admin document.txt
+   # Sets 'john' as owner and 'admin' as the owning group.
+
+C. Change Group Ownership Only:
+   sudo chown :admin document.txt
+   # Sets group to 'admin'. (Alternative tool: 'chgrp admin document.txt')
+
+D. Match Ownership of Another File (--reference):
+   sudo chown --reference=reference_file.txt target_file.txt
+   # Copies user and group ownership from reference_file.txt to target_file.txt.
+
+
+4. RECURSIVE OWNERSHIP CHANGES (-R)
+-------------------------------------------------------------------------------
+To change ownership for a directory along with all files and subdirectories inside it:
+
+    sudo chown -R milan:developers /var/www/my_project/
+
+
+5. 'chown' VS 'chmod' DIFFERENCE
+-------------------------------------------------------------------------------
+  Command    Full Form       Purpose                  Example
+  -----------------------------------------------------------------------------
+  chmod      Change Mode     Modifies PERMISSIONS    chmod 755 script.sh
+                             (Read/Write/Execute)
+  
+  chown      Change Owner    Modifies OWNERSHIP      chown user:group file.txt
+                             (Who owns the file)
+
+
+6. CHEAT SHEET SUMMARY
+-------------------------------------------------------------------------------
+  Target Outcome                     Command
+  -----------------------------------------------------------------------------
+  Change file owner                  sudo chown user file.txt
+  Change owner and group             sudo chown user:group file.txt
+  Change group only                  sudo chown :group file.txt
+  Recursive folder ownership change  sudo chown -R user:group folder/
+===============================================================================
+
+
+
+
+
+
+
+
+
+chgrp===============================================================================
+                    COMPLETE GUIDE TO THE 'chgrp' COMMAND
+===============================================================================
+
+1. OVERVIEW
+-------------------------------------------------------------------------------
+'chgrp' stands for "Change Group". It is a dedicated Linux/Unix utility used 
+to change the group ownership of files and directories.
+
+While 'chown' can also modify groups, 'chgrp' provides a simple, direct syntax 
+when you only need to update group permissions without altering the file owner.
+
+
+2. BASIC SYNTAX
+-------------------------------------------------------------------------------
+    chgrp [options] NEW_GROUP filename
+
+Examples:
+    sudo chgrp developers app.log
+    sudo chgrp -R developers /var/www/my_project/
+
+
+3. COMMON EXAMPLES & USAGE
+-------------------------------------------------------------------------------
+A. Change Group for a Single File:
+   sudo chgrp developers app.log
+   # Sets the group ownership of app.log to 'developers'.
+
+B. Change Group for Multiple Files:
+   sudo chgrp developers file1.txt file2.txt file3.txt
+
+C. Match Group Ownership of Another File (--reference):
+   chgrp --reference=fileA.txt fileB.txt
+   # Copies the group ownership from fileA.txt and applies it to fileB.txt.
+
+
+4. RECURSIVE GROUP CHANGES (-R)
+-------------------------------------------------------------------------------
+To update group ownership for a directory and every file/subfolder inside it:
+
+    sudo chgrp -R developers /var/www/my_project/
+
+
+5. COMPARISON: 'chown' VS 'chgrp'
+-------------------------------------------------------------------------------
+  Command    Target Scope                  Example
+  -----------------------------------------------------------------------------
+  chown      Changes Owner & Group         sudo chown milan:developers file.txt
+  chgrp      Changes GROUP ONLY            sudo chgrp developers file.txt
+
+
+6. CHEAT SHEET SUMMARY
+-------------------------------------------------------------------------------
+  Target Outcome                     Command
+  -----------------------------------------------------------------------------
+  Change group for a file            sudo chgrp groupname file.txt
+  Change group for multiple files    sudo chgrp groupname f1.txt f2.txt
+  Recursive folder group update      sudo chgrp -R groupname folder/
+  Copy group from another file       chgrp --reference=ref.txt target.txt
+===============================================================================
+
+
+
+
+umask
+umask        # Current umask value dekho
+umask -S     # Human-readable format me permissions dekho bachi hui
+umask 027    # Session ke liye naya umask set karo
+
+
+
+
+
+id
+id                 # Complete user identity info
+id -u              # Print numeric UID only
+id -un             # Print username only
+id -Gn             # Print names of all groups the user belongs to
+id <username>      # Check details of another user
+
+
+
+
+su-
+===============================================================================
+                    COMPLETE GUIDE TO THE 'su' COMMAND
+===============================================================================
+
+1. OVERVIEW
+-------------------------------------------------------------------------------
+'su' stands for "Substitute User" or "Switch User". It is a fundamental 
+Linux/Unix utility used to switch from the current terminal session to another 
+user account, most commonly the 'root' (superuser) account.
+
+
+2. BASIC SYNTAX
+-------------------------------------------------------------------------------
+    su [options] [username]
+
+* If no username is provided, 'su' defaults to switching to the 'root' user.
+
+
+3. THE TWO MODES OF USING 'su'
+-------------------------------------------------------------------------------
+Command        Shell Type            Environment Loaded
+-------------------------------------------------------------------------------
+su -           Full Login Shell     Target user's environment ($PATH, $HOME, etc.)
+               (Recommended)        completely overwrites the current user's shell.
+
+su             Non-login Shell      Keeps current user's environment/paths while 
+                                    only changing the User ID.
+
+
+4. PRACTICAL EXAMPLES
+-------------------------------------------------------------------------------
+A. Switch to Root User (Full Login):
+   su -
+   # Prompts for the ROOT account password.
+
+B. Switch to a Specific User:
+   su - john
+   # Prompts for 'john' account password.
+
+C. Execute a Single Command as Another User (-c):
+   su - john -c "ls -la /home/john/projects"
+   # Executes the command and exits back immediately.
+
+D. Exit the Switched Session:
+   exit
+   # Or press Ctrl + D to return to your original user.
+
+
+5. 'su' VS 'sudo' DIFFERENCE
+-------------------------------------------------------------------------------
+Feature            su                              sudo
+-------------------------------------------------------------------------------
+Password Req.      Target user's password          Your own account password
+Scope              Opens full interactive session   Runs single command with elevation
+Audit Logging      Harder to track individual cmds  Logs every command with username
+Default Ubuntu     Disabled (root has no password) Standard default for admin tasks
+
+
+6. CHEAT SHEET SUMMARY
+-------------------------------------------------------------------------------
+  Target Outcome                     Command
+  -----------------------------------------------------------------------------
+  Switch to Root (Full Login)        su -
+  Switch to specific user            su - username
+  Run single command as user         su - username -c "command"
+  Exit session                       exit   
+
+
+
+
+
+
+
+
+useradd
+useradd -m                            Create home directory
+useradd -s /bin/bash                  Set default shell
+useradd -g primarygroup               Set primary group
+useradd -G secondarygroup             Set secondary groups
+useradd -u 1004                       Assign custom User ID
+useradd -d /home/milan                Set custom home directory path
+useradd -e YYYY-MM-DD                 Set account expiration date
+
+
+
+
+
+
+
+usermod
+sudo usermod -aG sudo username      # User ko sudo/admin privileges do
+sudo usermod -s /bin/bash username  # Shell ko bash par switch karo
+sudo usermod -L username            # Account temporarily block karo
+sudo usermod -U username            # Account unblock/unlock karo
+usermod -d /home/milan                Set custom home directory path
+usermod -l newusername 
+
+
+
+
+
+userdel -r milan                delete user with home directory
+
+
+
+
+
+groupadd -g 1008.               custom gid
+
+
+
+
+groupmod -n newname oldname          rename group
+
+
+
+
+
+
+passwd
+passwd                  # Change your own password
+sudo passwd username    # Reset password for any user
+sudo passwd -e username # Force password change on next login
+sudo passwd -l username # Lock user account
+sudo passwd -u username # Unlock user account
+sudo passwd -S username # Check password status
+sudo passwd -x 90 -n 7 -w 14 john xpire notchange pass warnign before expire days
