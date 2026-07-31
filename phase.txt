@@ -45,7 +45,14 @@ sudo
 useradd
 usermod
 passwd
-Phase 5 — Processes
+
+Phase-5
+setfacl
+getfacl
+setfattr
+getfattr
+
+Phase 6 — Processes
 ps
 top
 htop
@@ -58,7 +65,7 @@ fg
 nice
 renice
 nohup
-Phase 6 — Storage
+Phase 7 — Storage
 df
 du
 lsblk
@@ -66,7 +73,7 @@ mount
 umount
 fdisk
 blkid
-Phase 7 — Networking
+Phase 8 — Networking
 ip
 ss
 ping
@@ -79,20 +86,20 @@ netcat
 ssh
 scp
 rsync
-Phase 8 — Services & Logs
+Phase 9 — Services & Logs
 systemctl
 journalctl
 dmesg
 crontab
 at
-Phase 9 — Archives & Compression
+Phase 10 — Archives & Compression
 tar
 gzip
 bzip2
 xz
 zip
 unzip
-Phase 10 — Debugging & Advanced
+Phase 11 — Debugging & Advanced
 strace
 lsof
 vmstat

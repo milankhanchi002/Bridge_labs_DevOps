@@ -18,4 +18,3 @@
     [ ] /sys      : Sysfs pseudo-filesystem (hardware & driver state)
     [ ] /dev      : Device nodes (/dev/sda, /dev/nvme0n1, /dev/null)
     [ ] /mnt,/media: Storage mount points (manual / removable)
-

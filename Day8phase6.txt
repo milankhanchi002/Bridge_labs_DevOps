@@ -1,0 +1,153 @@
+Phase 6 — Processes
+ps
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+                      TOPIC: THE 'ps' (PROCESS STATUS) COMMAND
+================================================================================
+
+1. OVERVIEW & CORE CONCEPT
+--------------------------------------------------------------------------------
+Command Name : ps (Process Status)
+Purpose      : Generates a static snapshot of active processes currently running
+               in memory (RAM) and managed by the Linux kernel.
+Key Property : Unlike 'top' or 'htop', 'ps' does NOT auto-refresh. It takes a
+               point-in-time picture and exits immediately.
+
+Key Metrics Provided:
+- PID  : Unique Process ID assigned by the kernel.
+- PPID : Parent Process ID (the process that spawned/launched this process).
+- USER : System user account running the process.
+- CPU/MEM usage : Percentage of CPU time and physical RAM consumed.
+- STAT : Current execution state of the process.
+
+
+2. SYNTAX STYLES (TRIPLE SYNTAX STANDARD)
+--------------------------------------------------------------------------------
+The 'ps' command supports options in three distinct syntax styles. Mixing them 
+incorrectly causes syntax warnings or unexpected output.
+
+1. BSD Style (No Dash)      : ps aux
+2. UNIX / POSIX Style (-)   : ps -ef
+3. GNU Long Options (--)    : ps --forest
+
+* Note: 'ps aux' (BSD) is NOT identical to 'ps -aux' (UNIX). Stick to standard 
+  patterns to avoid errors.
+
+
+3. ESSENTIAL FLAGS REFERENCE
+--------------------------------------------------------------------------------
+[SELECTION FLAGS - WHICH PROCESSES TO SHOW]
+  a           (BSD)  : Selects all processes with a terminal (TTY) for all users.
+  x           (BSD)  : Includes processes without a controlling terminal 
+                       (e.g., background daemons, system services).
+  -e / -A     (UNIX) : Selects ALL processes across the entire system.
+  -u <user>   (UNIX) : Selects processes owned by a specific user (e.g., ps -u root).
+  -p <PIDs>   (UNIX) : Selects processes by specific PIDs (e.g., ps -p 1234,5678).
+  -C <name>   (UNIX) : Selects processes by executable command name (e.g., ps -C nginx).
+
+[FORMATTING FLAGS - HOW TO DISPLAY OUTPUT]
+  u           (BSD)  : Displays user-oriented format (%CPU, %MEM, USER, RSS, VSZ).
+  -f          (UNIX) : Displays full-format listing (adds PPID, STIME, C, TTY).
+  -o <fields> (UNIX) : User-defined custom output format.
+  --forest    (GNU)  : Renders ASCII tree showing parent-child process hierarchy.
+  -T          (UNIX) : Displays threads associated with processes.
+
+
+4. THE 4 GOLD STANDARD COMMAND PATTERNS
+--------------------------------------------------------------------------------
+
+PATTERN 1: ps aux
+Description : The universal default for full system diagnostic snapshot.
+Command     : ps aux
+
+Sample Output Breakdown:
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.1 168340 11420 ?        Ss   Jul30  0:03 /sbin/init
+root       890  0.0  0.0  15820  7100 ?        Ss   Jul30  0:00 /usr/sbin/sshd
+milan     2320  0.1  0.2  22450  8900 pts/0    S+   10:15  0:01 -bash
+
+Column Explanation:
+- USER    : Account that owns and started the process.
+- PID     : Process ID number.
+- %CPU    : Percentage of total CPU capacity consumed.
+- %MEM    : Percentage of physical RAM consumed.
+- VSZ     : Virtual Memory Size in Kilobytes (includes code, data, shared libs).
+- RSS     : Resident Set Size (Actual physical RAM used in KB).
+- TTY     : Terminal device attached. '?' means daemon running in background.
+- STAT    : Process state code (see section 5).
+- START   : Time or date the process was started.
+- TIME    : Cumulative CPU execution time consumed since start (MM:SS).
+- COMMAND : Executable path and runtime parameters.
+
+
+PATTERN 2: ps -ef
+Description : Best for identifying Parent-Child process dependencies (PPID).
+Command     : ps -ef
+
+Sample Output:
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 Jul30 ?        00:00:03 /sbin/init
+root       890     1  0 Jul30 ?        00:00:00 /usr/sbin/sshd -D
+milan     2314   890  0 10:15 ?        00:00:00 sshd: milan [priv]
+
+
+PATTERN 3: ps -ef --forest
+Description : Renders parent-child process hierarchy as a visual tree.
+Command     : ps -ef --forest
+
+Sample Output:
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 Jul30 ?        00:00:03 /sbin/init
+root       890     1  0 Jul30 ?        00:00:00  ├─ /usr/sbin/sshd -D
+milan     2314   890  0 10:15 ?        00:00:00  │   └─ sshd: milan [priv]
+milan     2320  2314  0 10:15 pts/0    00:00:00  │       └─ -bash
+
+
+PATTERN 4: ps -eo (Custom Output Formatting)
+Description : Selects specific columns for clean reporting or bash scripting.
+Command     : ps -eo pid,user,%cpu,%mem,comm
+
+
+5. DECODING PROCESS STATES ('STAT' COLUMN)
+--------------------------------------------------------------------------------
+Primary State Letters:
+  R : Running or Runnable (Actively executing or waiting in CPU run-queue).
+  S : Interruptible Sleep (Waiting for an event/input to wake up).
+  D : Uninterruptible Sleep (Waiting on disk/hardware I/O. CANNOT BE KILLED!).
+  T : Stopped / Traced (Paused via signal, e.g., Ctrl + Z).
+  Z : Zombie / Defunct (Terminated process whose exit code wasn't read by parent).
+
+Secondary State Modifiers:
+  < : High-priority process (not "nice" to others).
+  N : Low-priority process ("nice" to others).
+  s : Session leader process (e.g., your login shell).
+  l : Multi-threaded process.
+  + : Foreground process running in terminal.
+
+
+6. REAL-WORLD DEMO EXAMPLES & CHEAT SHEET
+--------------------------------------------------------------------------------
+# Demo 1: Find process ID of a specific service (e.g., nginx or python)
+ps aux | grep nginx
+
+# Demo 2: Find Top 5 memory-hogging processes
+ps aux --sort=-%mem | head -n 6
+
+# Demo 3: Find Top 5 CPU-hogging processes
+ps aux --sort=-%cpu | head -n 6
+
+# Demo 4: List all processes owned by a specific user
+ps -u milan -f
+
+# Demo 5: Monitor all light-weight threads for a specific PID (e.g., PID 1234)
+ps -T -p 1234
+
+# Demo 6: Custom layout sorting by RAM usage
+ps -eo pid,user,%mem,rss,comm --sort=-%mem
+
+# Demo 7: Find all Zombie processes on system
+ps aux | awk '{if ($8 ~ /Z/) print $0}'
+
+================================================================================
+                                END OF NOTES
+================================================================================

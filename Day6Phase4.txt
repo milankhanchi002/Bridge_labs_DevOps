@@ -1,7 +1,6 @@
 Phase 4 — Permissions & Users
 chmod
 chown
-chgrp
 umask
 id
 whoami
