@@ -1,0 +1,27 @@
+WHAT WILL RUN?
+       │
+       ▼
+     IMAGE
+       │
+
+HOW POWERFUL?
+       │
+       ▼
+   VM SIZE / SERIES
+       │
+
+WHERE IN NETWORK?
+       │
+       ▼
+VNET → SUBNET → NIC → IP
+       │
+
+HOW AVAILABLE?
+       │
+       ├── None
+       │
+       ├── Availability Set
+       │      └── Fault Domain + Update Domain
+       │
+       └── Availability Zone
+              └── Separate physical zone/datacenter
