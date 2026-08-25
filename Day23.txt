@@ -1,0 +1,2159 @@
+====================================================================
+AZURE NETWORKING NOTES
+VNET → SUBNET → GATEWAYS → ROUTING → SECURITY → FIREWALL → PEERING
+====================================================================
+
+
+####################################################################
+1. VIRTUAL NETWORK (VNET)
+####################################################################
+
+VNet = Virtual Network.
+
+It is a logically isolated private network created inside Azure.
+
+We can think of a VNet as our own network boundary inside Azure.
+
+Example:
+
+VNet
+Address Space: 10.10.0.0/16
+
+
+Architecture:
+
+Azure
+ |
+ +---- VNet
+        |
+        +---- Subnet-1
+        |
+        +---- Subnet-2
+        |
+        +---- Subnet-3
+
+
+Resources such as:
+
+- Virtual Machines
+- Load Balancers
+- Application Gateways
+- Private Endpoints
+- Azure Firewall
+- Virtual Network Gateways
+
+can use networking inside or connected to a VNet.
+
+
+Main purpose of VNet:
+
+1. Network isolation
+2. IP address management
+3. Communication between Azure resources
+4. Connection to Internet
+5. Connection to On-Premises network
+6. Traffic routing
+7. Network security
+
+
+Example:
+
+VNet Address Space:
+
+10.10.0.0/16
+
+This means the VNet owns the address range:
+
+10.10.0.0 - 10.10.255.255
+
+
+====================================================================
+2. CIDR
+====================================================================
+
+CIDR = Classless Inter-Domain Routing.
+
+CIDR tells us how many bits belong to the network portion.
+
+Example:
+
+10.10.0.0/16
+
+
+IPv4 address = 32 bits.
+
+So:
+
+/16 = first 16 bits are network bits.
+
+Remaining:
+
+32 - 16 = 16 host bits.
+
+
+Total addresses:
+
+2^(32 - prefix)
+
+Example:
+
+/24
+
+2^(32-24)
+= 2^8
+= 256 total addresses.
+
+
+Common CIDRs:
+
+/16 = 65,536 addresses
+/17 = 32,768
+/18 = 16,384
+/19 = 8,192
+/20 = 4,096
+/21 = 2,048
+/22 = 1,024
+/23 = 512
+/24 = 256
+/25 = 128
+/26 = 64
+/27 = 32
+/28 = 16
+
+
+====================================================================
+3. SUBNET
+====================================================================
+
+A subnet is a smaller network created inside a VNet.
+
+Example:
+
+VNet:
+
+10.10.0.0/16
+
+
+We can divide it into:
+
+WebSubnet:
+
+10.10.0.0/24
+
+
+AppSubnet:
+
+10.10.1.0/24
+
+
+DBSubnet:
+
+10.10.2.0/24
+
+
+Architecture:
+
+VNet
+10.10.0.0/16
+ |
+ +---- WebSubnet
+ |      10.10.0.0/24
+ |
+ +---- AppSubnet
+ |      10.10.1.0/24
+ |
+ +---- DBSubnet
+        10.10.2.0/24
+
+
+Subnets allow us to:
+
+- Separate workloads
+- Apply different security rules
+- Apply different routing rules
+- Organize infrastructure
+- Create network boundaries
+
+
+Important:
+
+Subnet ranges inside the same VNet must NOT overlap.
+
+
+Wrong:
+
+Subnet-A:
+10.10.0.0/24
+
+Subnet-B:
+10.10.0.128/25
+
+
+These overlap.
+
+Therefore this is invalid.
+
+
+====================================================================
+4. AZURE RESERVED IP ADDRESSES
+====================================================================
+
+Azure reserves 5 IP addresses in every subnet.
+
+Example:
+
+Subnet:
+
+10.10.0.0/24
+
+
+Total IP addresses:
+
+256
+
+
+Azure reserves the first four and last IP addresses.
+
+Conceptually:
+
+Network address
+Azure default gateway
+Azure DNS-related infrastructure
+Azure internal reservation
+Last address
+
+
+Therefore:
+
+256 total addresses
+-
+5 reserved addresses
+=
+251 usable addresses for resources.
+
+
+Important:
+
+Azure subnet usable IP calculation is different from the traditional
+"network address and broadcast address only" explanation used in many
+basic networking examples.
+
+
+====================================================================
+5. VLSM
+====================================================================
+
+VLSM = Variable Length Subnet Mask.
+
+Instead of giving every subnet the same size, we allocate subnet sizes
+based on requirements.
+
+Example requirements:
+
+WebSubnet = 100 resources
+AppSubnet = 50 resources
+DBSubnet = 20 resources
+
+
+Possible design:
+
+WebSubnet:
+
+10.10.0.0/25
+
+
+AppSubnet:
+
+10.10.0.128/26
+
+
+DBSubnet:
+
+10.10.0.192/27
+
+
+The mindset should be:
+
+Requirement
+   |
+   v
+How many addresses are required?
+   |
+   v
+Choose suitable CIDR
+   |
+   v
+Allocate subnet
+   |
+   v
+Check overlap
+
+
+Do NOT always think:
+
+"I need 5 subnets, so how many bits should I borrow?"
+
+Better thinking:
+
+"How many resources does each subnet need?"
+
+
+====================================================================
+6. PUBLIC AND PRIVATE SUBNET CONCEPT
+====================================================================
+
+In Azure, "public subnet" and "private subnet" are commonly used
+architecture terms.
+
+They are not special Azure subnet types.
+
+Example:
+
+WebSubnet:
+
+VM may have Public IP.
+
+
+AppSubnet:
+
+VM may not have any Public IP.
+
+
+Architecture:
+
+Internet
+   |
+   |
+Public access
+   |
+   v
+WebSubnet
+   |
+   +---- WebVM
+          Public IP + Private IP
+
+
+WebVM
+   |
+   | Internal communication
+   v
+
+AppSubnet
+   |
+   +---- AppVM
+          Private IP only
+
+
+Important:
+
+A subnet does NOT automatically become private just because it has
+a NAT Gateway.
+
+NAT Gateway mainly provides outbound connectivity.
+
+
+====================================================================
+7. VIRTUAL MACHINES AND IP ADDRESSES
+====================================================================
+
+A VM always uses a private IP for communication inside the VNet.
+
+Example:
+
+WebVM:
+
+Private IP:
+10.10.0.4
+
+
+AppVM:
+
+Private IP:
+10.10.1.4
+
+
+Communication:
+
+WebVM
+10.10.0.4
+      |
+      | Private network
+      v
+AppVM
+10.10.1.4
+
+
+A VM can optionally have a Public IP for direct Internet connectivity.
+
+Example:
+
+Internet
+   |
+   v
+Public IP
+   |
+   v
+VM NIC
+   |
+   v
+VM
+
+
+Private-only VM:
+
+Internet
+   X
+   |
+No direct inbound public access
+
+
+====================================================================
+8. NAT GATEWAY
+====================================================================
+
+NAT = Network Address Translation.
+
+Azure NAT Gateway provides scalable outbound connectivity from private
+resources to the Internet.
+
+Example:
+
+AppVM:
+
+Private IP:
+10.10.1.4
+
+No Public IP.
+
+
+Architecture:
+
+AppVM
+Private IP
+    |
+    v
+AppSubnet
+    |
+    v
+NAT Gateway
+    |
+    v
+Public Internet
+
+
+The VM can initiate an outbound connection:
+
+AppVM
+   |
+   | HTTPS request
+   v
+NAT Gateway
+   |
+   | Source translation to NAT public IP
+   v
+Internet
+
+
+Response:
+
+Internet
+   |
+   v
+NAT Gateway
+   |
+   v
+AppVM
+
+
+Important:
+
+NAT Gateway is associated with a subnet.
+
+One NAT Gateway can provide outbound connectivity for resources in
+associated subnet(s).
+
+
+NAT Gateway does NOT mean:
+
+Internet
+   |
+   |
+Random inbound connection
+   v
+Private VM
+
+
+NAT Gateway is mainly for outbound initiated connectivity.
+
+
+Example:
+
+Private VM
+   |
+   | curl google.com
+   v
+NAT Gateway
+   |
+   v
+Internet
+
+
+Return traffic works because it belongs to an existing outbound flow.
+
+
+Mental model:
+
+NAT Gateway = Private resources going OUT to Internet.
+
+
+====================================================================
+9. GATEWAYSUBNET
+====================================================================
+
+GatewaySubnet is a special dedicated subnet used for Azure virtual
+network gateway resources.
+
+Examples:
+
+- VPN Gateway
+- ExpressRoute Gateway
+
+
+Architecture:
+
+VNet
+ |
+ +---- WebSubnet
+ |
+ +---- AppSubnet
+ |
+ +---- DBSubnet
+ |
+ +---- GatewaySubnet
+         |
+         +---- VPN Gateway
+               OR
+         +---- ExpressRoute Gateway
+
+
+Normal workload VMs should not be deployed in GatewaySubnet.
+
+GatewaySubnet is reserved for gateway infrastructure.
+
+
+====================================================================
+10. VPN GATEWAY
+====================================================================
+
+VPN Gateway connects an Azure VNet to another network using VPN
+technology.
+
+Common example:
+
+On-Premises Network:
+
+192.168.1.0/24
+
+
+Azure VNet:
+
+10.10.0.0/16
+
+
+Architecture:
+
+On-Premises Network
+192.168.1.0/24
+        |
+        | Encrypted VPN Tunnel
+        |
+        v
+VPN Gateway
+        |
+        | Located in GatewaySubnet
+        v
+Azure VNet
+        |
+        v
+Azure VM
+
+
+Example flow:
+
+On-Prem VM
+192.168.1.10
+       |
+       | Packet destined to 10.10.1.4
+       v
+On-Prem VPN Device
+       |
+       | Encrypted tunnel over network/Internet
+       v
+Azure VPN Gateway
+       |
+       v
+Azure VNet
+       |
+       v
+Azure VM
+10.10.1.4
+
+
+Important:
+
+The VPN Gateway resource is deployed into GatewaySubnet.
+
+But conceptually it acts as the connection boundary for traffic entering
+or leaving the VNet through that VPN connection.
+
+VPN Gateway can support scenarios such as:
+
+- Site-to-Site VPN
+- Point-to-Site VPN
+- VNet-to-VNet connectivity
+
+
+Mental model:
+
+VPN Gateway = Secure tunnel between Azure and another network.
+
+
+====================================================================
+11. EXPRESSROUTE
+====================================================================
+
+ExpressRoute provides private connectivity between Azure and an
+on-premises network through an ExpressRoute circuit/provider connection.
+
+The traffic does not need to traverse the public Internet in the same
+way as a normal Internet-based VPN connection.
+
+Architecture:
+
+On-Premises Data Center
+        |
+        v
+Connectivity Provider / Exchange
+        |
+        v
+ExpressRoute Circuit
+        |
+        v
+Azure
+        |
+        v
+ExpressRoute Gateway
+        |
+        | GatewaySubnet
+        v
+Azure VNet
+
+
+Example:
+
+Company Data Center
+        |
+        | Private connectivity
+        v
+Provider
+        |
+        v
+ExpressRoute Circuit
+        |
+        v
+ExpressRoute Gateway
+        |
+        v
+Azure VNet
+
+
+Use cases:
+
+- Large enterprises
+- High and predictable bandwidth requirements
+- Private connectivity requirements
+- Enterprise hybrid cloud architecture
+- Critical workloads
+
+
+Mental model:
+
+VPN = Encrypted tunnel over a network path that can include the Internet.
+
+ExpressRoute = Private dedicated/provider connectivity into Azure.
+
+
+====================================================================
+12. NAT vs VPN vs EXPRESSROUTE
+====================================================================
+
+NAT Gateway:
+
+Private Azure resources
+        |
+        v
+Internet
+
+Purpose:
+Outbound Internet connectivity.
+
+
+VPN Gateway:
+
+On-Prem
+   |
+Encrypted VPN Tunnel
+   |
+Azure VPN Gateway
+   |
+Azure VNet
+
+Purpose:
+Secure hybrid connectivity.
+
+
+ExpressRoute:
+
+On-Prem
+   |
+Private provider connectivity
+   |
+ExpressRoute
+   |
+Azure VNet
+
+Purpose:
+Private enterprise-grade hybrid connectivity.
+
+
+Quick memory:
+
+NAT = Azure private resources -> Internet
+
+VPN = Azure <-> Other network through VPN tunnel
+
+ExpressRoute = Azure <-> On-Prem through private provider connectivity
+
+
+====================================================================
+13. ROUTING BASICS
+====================================================================
+
+Routing answers the question:
+
+"Where should this packet go?"
+
+
+A route generally contains:
+
+Destination Prefix
+        |
+        v
+Next Hop
+
+
+Example:
+
+Destination:
+
+10.20.0.0/16
+
+
+Next Hop:
+
+Virtual Network Gateway
+
+
+Meaning:
+
+Traffic for 10.20.0.0/16 should go toward the configured gateway.
+
+
+====================================================================
+14. SYSTEM ROUTES
+====================================================================
+
+Azure automatically creates system routes.
+
+These provide default connectivity and routing behavior.
+
+Example:
+
+Traffic inside a VNet can be routed based on Azure system routes.
+
+
+Example:
+
+WebVM
+10.10.0.4
+       |
+       v
+System routing
+       |
+       v
+AppVM
+10.10.1.4
+
+
+You do not need to manually create a route just for every subnet inside
+the VNet to communicate.
+
+
+System routes can also reflect Azure connectivity scenarios such as
+Internet, peering, and other Azure-provided paths depending on the
+configuration.
+
+
+====================================================================
+15. USER DEFINED ROUTES (UDR)
+====================================================================
+
+UDR = User Defined Route.
+
+We create custom routes when we want to influence where traffic goes.
+
+Example:
+
+Destination:
+
+0.0.0.0/0
+
+
+Next Hop:
+
+Azure Firewall
+
+
+Meaning:
+
+Traffic not matching a more specific route should be sent toward the
+Firewall.
+
+
+Flow:
+
+AppVM
+   |
+   v
+Route lookup
+   |
+   v
+UDR
+0.0.0.0/0
+   |
+   v
+Azure Firewall
+   |
+   v
+Internet
+
+
+Important:
+
+UDR does not filter traffic.
+
+UDR only helps decide the traffic path.
+
+
+Routing decides:
+
+WHERE traffic goes.
+
+
+Firewall/NSG decides:
+
+Whether traffic is allowed or denied.
+
+
+====================================================================
+16. ROUTE TABLE
+====================================================================
+
+A Route Table is an Azure resource that contains UDRs.
+
+Example:
+
+Route Table: AppRouteTable
+
+
+Routes:
+
+10.20.0.0/16
+Next Hop: Virtual Network Gateway
+
+
+0.0.0.0/0
+Next Hop: Virtual Appliance / Firewall
+
+
+Architecture:
+
+Route Table
+ |
+ +---- Route 1
+ |
+ +---- Route 2
+ |
+ +---- Route 3
+
+
+Route tables are associated with subnets.
+
+Example:
+
+AppSubnet
+     |
+     v
+AppRouteTable
+
+
+A route table can contain multiple routes.
+
+
+One subnet can have only one route table association at a time.
+
+
+A route table can be associated with multiple subnets.
+
+
+Conceptually:
+
+RouteTable-A
+     |
+     +----------+
+     |          |
+     v          v
+Subnet-1     Subnet-2
+
+
+Azure route tables are regional resources and are associated with
+subnets in the supported regional scope.
+
+
+====================================================================
+17. GATEWAY / PROPAGATED ROUTES
+====================================================================
+
+When hybrid connectivity such as a virtual network gateway is involved,
+routes to remote networks can be propagated into the VNet routing system.
+
+Example:
+
+On-Prem Network:
+
+192.168.1.0/24
+
+
+Azure may have routing information indicating:
+
+Destination:
+192.168.1.0/24
+
+Next Hop:
+Virtual Network Gateway
+
+
+Concept:
+
+Azure VNet
+    |
+    | Route says:
+    | 192.168.1.0/24
+    v
+Virtual Network Gateway
+    |
+    v
+On-Premises Network
+
+
+====================================================================
+18. EFFECTIVE ROUTES
+====================================================================
+
+Effective Routes represent the routes applicable to a VM/NIC context.
+
+Conceptually, they can result from combinations such as:
+
+- Azure system routes
+- User Defined Routes
+- Propagated gateway routes
+- Other applicable routing configuration
+
+
+Concept:
+
+System Routes
+      |
+UDR -----------+
+      |        |
+Gateway Routes |
+      |        |
+      +--------+
+           |
+           v
+     Effective Routes
+           |
+           v
+Packet route decision
+
+
+Important:
+
+Effective Routes are not a separate route table resource that you
+manually create.
+
+They are the resulting applicable routes seen from the resource/network
+interface context.
+
+
+====================================================================
+19. LONGEST PREFIX MATCH
+====================================================================
+
+If multiple routes match a destination, the most specific matching
+prefix is generally selected.
+
+Example:
+
+10.0.0.0/8
+
+10.10.0.0/16
+
+10.10.1.0/24
+
+
+Destination:
+
+10.10.1.20
+
+
+All three match.
+
+But:
+
+10.10.1.0/24
+
+is the most specific.
+
+
+Therefore:
+
+10.10.1.0/24 wins.
+
+
+Example:
+
+Destination:
+10.10.1.20
+
+Matches:
+
+10.0.0.0/8       Yes
+10.10.0.0/16     Yes
+10.10.1.0/24     Yes
+
+
+Selected:
+
+10.10.1.0/24
+
+
+Mental model:
+
+More specific destination = Longer prefix = Preferred match.
+
+
+If no more specific route exists, a default route such as:
+
+0.0.0.0/0
+
+can act as the catch-all route.
+
+
+====================================================================
+20. NETWORK SECURITY GROUP (NSG)
+====================================================================
+
+NSG = Network Security Group.
+
+NSG filters network traffic.
+
+It answers:
+
+Should this traffic be allowed or denied?
+
+
+NSG rules can evaluate:
+
+- Source
+- Destination
+- Source port
+- Destination port
+- Protocol
+- Direction
+
+
+Actions:
+
+Allow
+Deny
+
+
+Example:
+
+Source:
+
+10.10.0.0/24
+
+
+Destination:
+
+10.10.1.0/24
+
+
+Protocol:
+
+TCP
+
+
+Destination Port:
+
+80
+
+
+Action:
+
+Allow
+
+
+Meaning:
+
+WebSubnet
+    |
+    | TCP 80
+    v
+AppSubnet
+
+Allowed.
+
+
+====================================================================
+21. INBOUND AND OUTBOUND NSG RULES
+====================================================================
+
+Inbound:
+
+Traffic coming toward the resource.
+
+
+Example:
+
+Internet
+   |
+   v
+VM Port 443
+
+
+Outbound:
+
+Traffic leaving the resource.
+
+
+Example:
+
+VM
+   |
+   | HTTPS
+   v
+Internet
+
+
+NSG has separate inbound and outbound rules.
+
+
+====================================================================
+22. NSG AT SUBNET LEVEL AND NIC LEVEL
+====================================================================
+
+An NSG can be associated with:
+
+1. Subnet
+2. NIC
+
+
+Example:
+
+VNet
+ |
+ +---- AppSubnet
+        |
+        | NSG at Subnet
+        v
+       AppVM
+        |
+        | NSG at NIC
+        v
+       NIC
+
+
+Both applicable security policies can affect traffic.
+
+
+Conceptually:
+
+Subnet NSG
+    |
+    v
+Traffic
+    |
+    v
+NIC NSG
+    |
+    v
+VM
+
+
+For traffic to pass, it must not be blocked by an applicable NSG rule.
+
+
+Example:
+
+Subnet NSG:
+
+Allow TCP 80
+
+
+NIC NSG:
+
+Deny TCP 80
+
+
+Final result:
+
+Blocked.
+
+
+One NSG's Allow does not override another applicable NSG's Deny.
+
+
+====================================================================
+23. NSG IS STATEFUL
+====================================================================
+
+NSG is stateful.
+
+Example:
+
+VM
+ |
+ | Outbound HTTPS request allowed
+ v
+Internet
+
+
+The response:
+
+Internet
+   |
+   v
+VM
+
+
+does not require a separate matching inbound rule just for the return
+traffic of that established connection.
+
+Conceptually:
+
+Allowed connection
+       |
+       v
+Connection state tracked
+       |
+       v
+Return traffic allowed for that flow
+
+
+====================================================================
+24. NSG RULE PRIORITY
+====================================================================
+
+NSG rules have priorities.
+
+Lower number = Higher priority.
+
+
+Example:
+
+Priority 100:
+
+Deny TCP 80
+
+
+Priority 200:
+
+Allow TCP 80
+
+
+TCP 80 traffic matches priority 100 first.
+
+Result:
+
+Denied.
+
+
+Once a matching rule is processed, lower-priority rules do not override
+that decision for the same flow evaluation.
+
+
+====================================================================
+25. DEFAULT NSG RULES
+====================================================================
+
+Azure provides default NSG rules.
+
+Conceptually:
+
+Inbound defaults include:
+
+- AllowVNetInBound
+- AllowAzureLoadBalancerInBound
+- DenyAllInBound
+
+
+Outbound defaults include:
+
+- AllowVNetOutBound
+- AllowInternetOutBound
+- DenyAllOutBound
+
+
+Custom rules use priorities that are evaluated before the default rules.
+
+
+====================================================================
+26. NSG SCOPE
+====================================================================
+
+NSG is a regional Azure resource.
+
+It can be associated with:
+
+- Subnets
+- NICs
+
+The same NSG can be reused for multiple supported subnet/NIC associations
+within its regional scope.
+
+
+Purpose:
+
+Distributed network filtering close to workload boundaries.
+
+
+Mental model:
+
+NSG
+ |
+ +---- Subnet security
+ |
+ +---- NIC security
+
+
+====================================================================
+27. APPLICATION SECURITY GROUP (ASG)
+====================================================================
+
+ASG = Application Security Group.
+
+ASG logically groups VM NICs based on application role.
+
+Example:
+
+WebVM1 NIC
+WebVM2 NIC
+WebVM3 NIC
+
+All belong to:
+
+ASG-Web
+
+
+AppVM1 NIC
+AppVM2 NIC
+
+All belong to:
+
+ASG-App
+
+
+Instead of using individual IP addresses:
+
+10.10.0.4
+10.10.0.5
+10.10.0.6
+
+
+we can use:
+
+ASG-Web
+
+
+inside an NSG rule.
+
+
+Example:
+
+Source:
+
+ASG-Web
+
+
+Destination:
+
+ASG-App
+
+
+Port:
+
+8080
+
+
+Action:
+
+Allow
+
+
+Architecture:
+
+WebVM1 ----\
+WebVM2 ----- ASG-Web
+WebVM3 ----/
+
+                 |
+                 | TCP 8080
+                 v
+
+              ASG-App
+              /      \
+          AppVM1    AppVM2
+
+
+====================================================================
+28. WHAT PROBLEM DOES ASG SOLVE?
+====================================================================
+
+Without ASG:
+
+NSG Rule:
+
+Source:
+10.10.0.4
+10.10.0.5
+10.10.0.6
+
+
+If IP addresses change or new VMs are added, rules may need updating.
+
+
+With ASG:
+
+Source:
+
+ASG-Web
+
+
+When a new Web VM is created:
+
+NewWebVM NIC
+      |
+      v
+Add to ASG-Web
+
+
+The logical security policy can continue to apply without adding every
+individual VM IP to the rule.
+
+
+ASG = Logical identity/grouping.
+
+NSG = Actual filtering.
+
+
+ASG itself does NOT filter traffic.
+
+
+====================================================================
+29. ASG SCOPE
+====================================================================
+
+ASG is a regional resource used in a VNet context.
+
+ASG can group NICs across multiple subnets of the same VNet.
+
+Example:
+
+VNet-A
+ |
+ +---- WebSubnet
+ |       |
+ |       +---- WebVM1 NIC
+ |
+ +---- AnotherSubnet
+         |
+         +---- WebVM2 NIC
+
+
+Both can belong to the same ASG if supported within that VNet context.
+
+
+ASG is not a cross-VNet grouping mechanism.
+
+Example:
+
+VNet-A:
+
+ASG-Web
+
+
+VNet-B:
+
+Use a separate ASG for its NICs.
+
+
+====================================================================
+30. NSG vs ASG
+====================================================================
+
+NSG:
+
+Filters traffic.
+
+
+ASG:
+
+Logically groups NICs.
+
+
+Together:
+
+ASG-Web
+    |
+    | Used as source
+    v
+
+NSG Rule
+    |
+    | TCP 8080
+    v
+
+ASG-App
+
+
+Memory line:
+
+ASG identifies WHO.
+
+NSG decides ALLOW or DENY.
+
+
+====================================================================
+31. AZURE FIREWALL
+====================================================================
+
+Azure Firewall is a managed, stateful firewall service.
+
+It provides centralized traffic inspection and control.
+
+
+NSG:
+
+Distributed filtering at subnet/NIC level.
+
+
+Azure Firewall:
+
+Centralized inspection point.
+
+
+Architecture:
+
+VNet
+ |
+ +---- WebSubnet
+ |
+ +---- AppSubnet
+ |
+ +---- DBSubnet
+ |
+ +---- AzureFirewallSubnet
+         |
+         v
+      Azure Firewall
+
+
+Azure Firewall requires a dedicated subnet named:
+
+AzureFirewallSubnet
+
+
+Normal workload VMs should not be deployed there.
+
+
+====================================================================
+32. FIREWALL AND ROUTING
+====================================================================
+
+Azure Firewall does NOT automatically inspect all VNet traffic.
+
+Traffic must actually pass through the Firewall.
+
+For outbound and east-west inspection, UDRs are commonly used to steer
+traffic.
+
+
+Example:
+
+AppVM
+   |
+   v
+Route Lookup
+   |
+   v
+UDR
+0.0.0.0/0
+   |
+   v
+Azure Firewall
+   |
+   +---- Allowed ----> Internet
+   |
+   +---- Denied ------> Blocked
+
+
+Important:
+
+Routing decides WHERE traffic goes.
+
+Firewall decides whether traffic is ALLOWED or DENIED.
+
+
+====================================================================
+33. FIREWALL TRAFFIC DIRECTIONS
+====================================================================
+
+Azure Firewall can be part of different traffic flows.
+
+
+A. North-South traffic
+
+Internet <-> Azure VNet
+
+
+Example:
+
+Internet
+   |
+   v
+Azure Firewall
+   |
+   v
+WebVM
+
+
+Inbound publishing commonly involves firewall public IP/NAT configuration
+and appropriate security rules.
+
+
+B. Outbound traffic
+
+Azure VM -> Internet
+
+
+Example:
+
+AppVM
+   |
+   v
+UDR
+   |
+   v
+Azure Firewall
+   |
+   v
+Internet
+
+
+C. East-West traffic
+
+Subnet/VNet -> Subnet/VNet
+
+
+Example:
+
+WebSubnet
+    |
+    v
+Azure Firewall
+    |
+    v
+AppSubnet
+
+
+This requires routing architecture that sends the traffic through the
+Firewall.
+
+
+Therefore:
+
+Azure Firewall is NOT simply "the entry point of the VNet."
+
+
+It is a centralized inspection point that can inspect traffic routed
+through it.
+
+
+====================================================================
+34. AZURE FIREWALL RULE TYPES
+====================================================================
+
+Basic concepts:
+
+
+1. Network Rules
+
+Used for network-level traffic control.
+
+Conceptually based on:
+
+- Source
+- Destination
+- Protocol
+- Port
+
+
+Example:
+
+Allow:
+
+10.10.1.0/24
+to
+10.10.2.0/24
+
+TCP Port 8080
+
+
+2. Application Rules
+
+Used for application/FQDN-based outbound control.
+
+Conceptually:
+
+Allow access to specific applications/domains.
+
+
+Example:
+
+Allow:
+
+*.microsoft.com
+
+over HTTPS.
+
+
+3. NAT Rules
+
+Used to translate/publish traffic.
+
+Example:
+
+Internet
+   |
+   | Firewall Public IP:443
+   v
+Azure Firewall
+   |
+   | DNAT
+   v
+WebVM
+10.10.0.4:443
+
+
+====================================================================
+35. AZURE FIREWALL SCOPE
+====================================================================
+
+Azure Firewall is deployed into a VNet in a dedicated:
+
+AzureFirewallSubnet
+
+
+It is a regional resource.
+
+
+Example:
+
+Central India
+ |
+ +---- VNet
+        |
+        +---- AzureFirewallSubnet
+                 |
+                 +---- Azure Firewall
+
+
+A centralized hub-and-spoke architecture can route traffic from connected
+spoke VNets through a Firewall deployed in a hub VNet.
+
+
+Example:
+
+                 Hub VNet
+                     |
+               Azure Firewall
+                     |
+          +----------+----------+
+          |                     |
+          v                     v
+       Peering               Peering
+          |                     |
+          v                     v
+      Spoke VNet-1        Spoke VNet-2
+
+
+UDRs can steer traffic through the Firewall.
+
+
+====================================================================
+36. NSG vs AZURE FIREWALL
+====================================================================
+
+NSG:
+
+- Subnet/NIC level
+- Basic distributed network filtering
+- Inbound and outbound rules
+- Stateful
+- No NAT capability
+- Does not control routing
+- Uses source/destination/port/protocol/direction
+
+
+Azure Firewall:
+
+- Centralized managed firewall service
+- Deployed in AzureFirewallSubnet
+- Stateful
+- Advanced traffic inspection
+- Network rules
+- Application/FQDN rules
+- NAT rules
+- Can inspect north-south traffic
+- Can inspect east-west traffic if routed through it
+- Commonly requires UDR steering for outbound/internal traffic paths
+
+
+Memory line:
+
+NSG = Security at workload boundaries.
+
+Azure Firewall = Centralized inspection on selected traffic paths.
+
+
+====================================================================
+37. VNET PEERING
+====================================================================
+
+VNet Peering connects two Azure VNets.
+
+Example:
+
+VNet-A:
+
+10.10.0.0/16
+
+
+VNet-B:
+
+10.20.0.0/16
+
+
+Architecture:
+
+VNet-A
+10.10.0.0/16
+     |
+     | VNet Peering
+     |
+VNet-B
+10.20.0.0/16
+
+
+Resources can communicate using private IP addresses.
+
+
+Example:
+
+VM-A
+10.10.1.4
+       |
+       | Private Azure backbone connectivity
+       v
+VM-B
+10.20.1.4
+
+
+Important:
+
+The address spaces of connected VNets should not overlap.
+
+
+Wrong:
+
+VNet-A:
+
+10.10.0.0/16
+
+
+VNet-B:
+
+10.10.0.0/16
+
+
+This overlapping design prevents normal peering between those overlapping
+address spaces.
+
+
+====================================================================
+38. PEERING DOES NOT REMOVE SECURITY
+====================================================================
+
+Even if VNet Peering exists:
+
+VNet-A
+   |
+   | Peering
+   v
+VNet-B
+
+
+traffic can still be affected by:
+
+- NSGs
+- Azure Firewall
+- UDRs
+- Other security/routing controls
+
+
+Peering provides network connectivity.
+
+It does not mean:
+
+"All traffic is automatically allowed."
+
+
+Example:
+
+VM-A
+   |
+   v
+Peering
+   |
+   v
+NSG
+   |
+   +---- Allow --> VM-B
+   |
+   +---- Deny ----> Blocked
+
+
+====================================================================
+39. COMPLETE MENTAL MODEL
+====================================================================
+
+                    INTERNET
+                        |
+                        |
+                 Azure Firewall
+                        ^
+                        |
+                  UDR / Routing
+                        |
+        +---------------+---------------+
+        |               |               |
+        v               v               v
+
+    WebSubnet       AppSubnet       DBSubnet
+        |               |               |
+       NSG             NSG             NSG
+        |               |               |
+       NIC             NIC             NIC
+        |               |               |
+      WebVM           AppVM           DBVM
+
+
+Private outbound Internet:
+
+AppVM
+   |
+   v
+NAT Gateway
+   |
+   v
+Internet
+
+
+Hybrid connectivity:
+
+On-Prem
+   |
+   +---- VPN Tunnel --------> VPN Gateway
+   |
+   +---- Private Connection -> ExpressRoute Gateway
+                                |
+                                v
+                            Azure VNet
+
+
+====================================================================
+40. COMPLETE PACKET FLOW MENTAL MODEL
+====================================================================
+
+When a packet is generated:
+
+1. Source VM creates packet.
+
+2. Azure networking determines applicable route.
+
+3. Effective routes are considered.
+
+4. Destination prefix is matched.
+
+5. Most specific matching route generally wins.
+
+6. Next hop/path is selected.
+
+7. If traffic is routed to a Firewall:
+   Firewall inspects it.
+
+8. NSG filtering is applied at applicable subnet/NIC enforcement points.
+
+9. If allowed, traffic reaches destination.
+
+Conceptually:
+
+Packet
+   |
+   v
+Route Lookup
+   |
+   v
+Effective Routes
+   |
+   v
+Longest Prefix Match
+   |
+   v
+Next Hop
+   |
+   +---- Firewall path?
+   |          |
+   |          v
+   |      Inspect
+   |
+   v
+NSG Enforcement
+   |
+   +---- Allow --> Destination
+   |
+   +---- Deny ----> Block
+
+
+====================================================================
+41. FINAL ONE-LINE MEMORY SUMMARY
+====================================================================
+
+VNet
+= My private network boundary in Azure.
+
+
+Subnet
+= Smaller network segment inside VNet.
+
+
+CIDR
+= Defines network size/address range.
+
+
+VLSM
+= Different subnet sizes based on requirements.
+
+
+NAT Gateway
+= Private resources can initiate outbound Internet connections.
+
+
+VPN Gateway
+= Encrypted VPN connectivity between Azure and another network.
+
+
+ExpressRoute
+= Private provider-based connectivity between Azure and on-premises.
+
+
+GatewaySubnet
+= Dedicated subnet for VPN/ExpressRoute gateway resources.
+
+
+System Routes
+= Azure-provided routing.
+
+
+UDR
+= Custom routing created by us.
+
+
+Route Table
+= Azure resource containing UDRs, associated with subnets.
+
+
+Gateway/Propagated Routes
+= Routes learned through hybrid gateway connectivity.
+
+
+Effective Routes
+= Resulting routes applicable to a resource/NIC context.
+
+
+Longest Prefix Match
+= Most specific matching route generally wins.
+
+
+NSG
+= Allows or denies network traffic at subnet/NIC level.
+
+
+ASG
+= Logically groups VM NICs for use in NSG rules.
+
+
+Azure Firewall
+= Centralized managed firewall inspecting traffic routed through it.
+
+
+VNet Peering
+= Private connectivity between Azure VNets.
+
+
+GOLDEN MEMORY LINE:
+
+Routing decides:
+
+WHERE the packet goes.
+
+NSG / Firewall decides:
+
+WHETHER the packet is allowed.
+
+ASG helps identify:
+
+WHICH application group the packet belongs to.

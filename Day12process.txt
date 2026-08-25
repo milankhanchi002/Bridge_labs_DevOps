@@ -1,0 +1,374 @@
+- Performance monitoring:
+            vmstat. *
+            iostat. *
+            sar.    *
+            netstat.
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+               MODULE 4: DEEP DIVE PERFORMANCE MONITORING (vmstat)
+================================================================================
+
+1. INTRODUCTION & UTILITY OVERVIEW
+--------------------------------------------------------------------------------
+Command Name : vmstat (Virtual Memory Statistics)
+Package      : procps / procps-ng
+Primary Use  : Low-overhead, real-time reporting of virtual memory, process, 
+               paging, block I/O, system traps, and CPU utilization.
+
+Why System Administrators Use `vmstat`:
+- Near-zero performance overhead (safe to run on high-load production servers).
+- Combines metrics from CPU, Memory, Disk I/O, and Process Scheduler into a 
+  single tabular snapshot.
+- Fast diagnostic tool to identify system bottlenecks in under 10 seconds.
+
+
+2. COMMAND SYNTAX & FLAG REFERENCE
+--------------------------------------------------------------------------------
+Basic Syntax:
+  vmstat [options] [delay_in_seconds] [count]
+
+Examples:
+  vmstat          : Shows average performance metrics since system boot.
+  vmstat 2        : Continuously updates metrics every 2 seconds until Ctrl+C.
+  vmstat 1 10     : Updates every 1 second, runs exactly 10 times, then exits.
+
+Useful Command Options:
+  vmstat -s       : Displays memory event counters and statistics since boot.
+  vmstat -a       : Toggles memory output to display Active and Inactive memory.
+  vmstat -d       : Displays comprehensive per-disk statistics (reads, writes, IO).
+  vmstat -S M     : Displays memory stats in Megabytes (MB) instead of KB.
+  vmstat -p sda1  : Displays statistics for a specific disk partition.
+  vmstat -t       : Appends a timestamp to each output line (ideal for logging).
+
+
+3. COMPLETE COLUMN DEFINITION MATRIX
+--------------------------------------------------------------------------------
+The output is categorized into six major structural sections:
+
+SECTION 1: procs (Process State Metrics)
+--------------------------------------------------------------------------------
+  r  (Runnable)   : Count of processes in running or runnable state (waiting 
+                    for CPU time).
+  b  (Blocked)    : Count of processes sleeping in uninterruptible wait state 
+                    (waiting on disk, network, or driver I/O).
+
+SECTION 2: memory (RAM Allocation in KB / MB)
+--------------------------------------------------------------------------------
+  swpd (Swapped)  : Total amount of virtual memory currently used (swapped out).
+  free (Unused)   : Amount of completely unallocated, idle physical RAM.
+  buff (Buffers)  : RAM allocated for temporary storage of raw disk metadata.
+  cache (Cached)  : RAM allocated for caching file data read from disk.
+
+SECTION 3: swap (Memory Paging Performance)
+--------------------------------------------------------------------------------
+  si (Swap-In)    : Memory paged IN from disk swap space to RAM per second.
+  so (Swap-Out)   : Memory paged OUT from RAM to disk swap space per second.
+
+SECTION 4: io (Block Input / Output)
+--------------------------------------------------------------------------------
+  bi (Blocks In)  : Blocks received from a block device / disk (read ops/sec).
+  bo (Blocks Out) : Blocks sent to a block device / disk (write ops/sec).
+
+SECTION 5: system (Interrupts & Scheduler Contexts)
+--------------------------------------------------------------------------------
+  in (Interrupts) : Number of system interrupts per second, including clock.
+  cs (Context Sw) : Number of context switches per second (CPU shifting between 
+                    threads/processes).
+
+SECTION 6: cpu (Time Percentage Distribution)
+--------------------------------------------------------------------------------
+  us (User)       : Percentage of CPU time spent executing non-kernel code.
+  sy (System)     : Percentage of CPU time spent executing kernel-level code.
+  id (Idle)       : Percentage of CPU time spent completely idle/free.
+  wa (IO Wait)    : Percentage of CPU time spent waiting for IO tasks to complete.
+  st (Steal)      : Percentage of CPU time stolen by hypervisor from a VM.
+
+
+4. PRODUCTION BOTTLENECK DIAGNOSIS & RULES OF THUMB
+--------------------------------------------------------------------------------
+Use the following threshold rules to isolate performance issues instantly:
+
+A) CPU BOTTLENECK:
+   - Condition : `r` column is consistently greater than total logical CPU cores 
+                 (e.g., `r` = 8 on a 4-core machine).
+   - Condition : Combined `us` + `sy` is consistently above 90%.
+   - Diagnosis : The system has insufficient CPU resources or runaway processes.
+
+B) DISK I/O BOTTLENECK:
+   - Condition : `wa` (IO Wait) is consistently above 15% - 20%.
+   - Condition : `b` (Blocked processes) is > 0 continuously.
+   - Condition : High `bi` / `bo` numbers accompanied by high `wa`.
+   - Diagnosis : Storage subsystem (HDD/SSD/SAN) is too slow or overloaded with 
+                 read/write operations.
+
+C) SEVERE RAM EXHAUSTION (THRASHING):
+   - Condition : `si` and `so` columns show values > 0 continuously.
+   - Condition : `free` memory is near zero, and `swpd` is steadily growing.
+   - Diagnosis : Physical RAM is completely full, causing excessive paging to 
+                 disk. System response time degrades exponentially.
+
+D) EXCESSIVE CONTEXT SWITCHING:
+   - Condition : `cs` spikes into tens of thousands relative to standard baseline.
+   - Diagnosis : High thread lock contention, poor application multithreading, 
+                 or microsecond-level process wakeups.
+
+
+5. PRACTICAL PRODUCTION TROUBLESHOOTING WORKFLOW
+--------------------------------------------------------------------------------
+Step 1: Execute `vmstat -t 1 10` to get real-time metrics with timestamps.
+Step 2: Check `wa` and `b`. If high -> Use `iostat -xz 1` to find the exact disk.
+Step 3: Check `r` and `us`/`sy`. If high -> Use `top` or `htop` to identify PIDs.
+Step 4: Check `si` and `so`. If > 0 -> Use `free -m` and `ps` to find memory hogs.
+================================================================================
+                                END OF NOTES
+================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+                 MODULE 4: DISK PERFORMANCE MONITORING (iostat)
+================================================================================
+
+1. INTRODUCTION & TOOL OVERVIEW
+--------------------------------------------------------------------------------
+Command Name : iostat (Input / Output Statistics)
+Package      : sysstat (Installation: `sudo apt install sysstat` or `yum install sysstat`)
+Primary Use  : Monitoring system storage device input/output loading by observing 
+               the time devices are active relative to their average transfer rates.
+
+When to Use `iostat`:
+- When `vmstat` shows high `wa` (I/O Wait > 15%) or `b` (Blocked processes).
+- To pinpoint WHICH specific disk (HDD, SSD, NVMe, SAN LUN) is saturated.
+- To detect storage latency issues causing slow Database queries or web apps.
+
+
+2. COMMAND SYNTAX & CRITICAL FLAGS
+--------------------------------------------------------------------------------
+Basic Syntax:
+  iostat [options] [interval_in_seconds] [count]
+
+Essential Production Command Variations:
+  iostat                 : Displays CPU and Disk metrics averaged since boot.
+  iostat -x 2 5          : Displays extended metrics every 2 seconds, 5 times.
+  iostat -xzm 2          : Shows extended stats, omits idle disks, forces MB/s.
+  iostat -p sda 2        : Monitors a specific disk (`sda`) and all its partitions.
+  iostat -d 1            : Displays ONLY device utilization (hides CPU section).
+
+
+3. COMPLETE COLUMN DEFINITION MATRIX (`iostat -x`)
+--------------------------------------------------------------------------------
+SECTION 1: Throughput & Operations (IOPS)
+  r/s     : Number of read requests issued to the device per second.
+  w/s     : Number of write requests issued to the device per second.
+  rMB/s   : Megabytes read from the device per second.
+  wMB/s   : Megabytes written to the device per second.
+
+SECTION 2: Request Sizing & Queueing
+  rrqm/s  : Read requests merged together per second before hitting disk.
+  wrqm/s  : Write requests merged together per second before hitting disk.
+  aqu-sz  : Average Queue Size of I/O requests waiting in device queue.
+
+SECTION 3: Latency & Saturation (Most Important for Troubleshooting)
+  r_await : Average time (in milliseconds) for read requests to be served.
+  w_await : Average time (in milliseconds) for write requests to be served.
+  rareq-s : Average size (in KB) of the read requests issued to the device.
+  wareq-s : Average size (in KB) of the write requests issued to the device.
+  %util   : Percentage of elapsed time during which I/O requests were issued 
+            to the device (Device bandwidth utilization).
+
+
+4. PRODUCTION BOTTLENECK DIAGNOSIS & RULES OF THUMB
+--------------------------------------------------------------------------------
+A) DISK SATURATION / OVERLOAD:
+   - Condition : `%util` is approaching 100% continuously.
+   - Diagnosis : The disk hardware has reached its maximum bandwidth / IOPS limit.
+   - Action    : Identify processes writing to disk using `iotop` or `lsof`.
+
+B) HIGH STORAGE LATENCY (SLOW DISK):
+   - Condition : `r_await` or `w_await` > 20ms for HDDs, or > 5ms for NVMe/SSDs.
+   - Diagnosis : Disk controller or SAN array is struggling to keep up with requests.
+
+C) HIGH I/O QUEUEING:
+   - Condition : `aqu-sz` > 2.0 consistently.
+   - Diagnosis : Applications are sending I/O requests faster than the storage layer 
+                 can process them, causing requests to pile up in memory.
+
+
+5. REAL-WORLD TROUBLESHOOTING WORKFLOW
+--------------------------------------------------------------------------------
+Step 1: Detect I/O delay in `vmstat 1` (`wa > 15%`).
+Step 2: Run `iostat -xzm 1` to find the exact disk with `%util` ~ 100% or high `await`.
+Step 3: Run `sudo iotop -o` to find the exact Process Name / PID causing the high disk I/O.
+================================================================================
+                                END OF NOTES
+================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+             MODULE 4: HISTORICAL PERFORMANCE TRACKING (sar)
+================================================================================
+
+1. INTRODUCTION & TOOL OVERVIEW
+--------------------------------------------------------------------------------
+Command Name : sar (System Activity Reporter)
+Package      : sysstat
+Binary Path  : /usr/bin/sar
+Collector    : /usr/lib/sysstat/sadc (System Activity Data Collector)
+Log Path     : /var/log/sysstat/saDD (Debian/Ubuntu)
+               /var/log/sa/saDD      (RHEL/CentOS)
+               *(Where 'DD' is the 2-digit day of the month, e.g., sa05)*
+
+Primary Use:
+- Collecting, reporting, and saving system activity metrics over time.
+- Covers CPU, Memory, Swap, Disk I/O, Network Traffic, and Load Average.
+- Essential for Post-Mortem Incident Analysis (investigating past outages)
+  and Capacity Planning.
+
+
+2. ENABLING DATA COLLECTION (BACKGROUND DAEMON)
+--------------------------------------------------------------------------------
+Configuration File : /etc/default/sysstat (Debian/Ubuntu)
+                     /etc/sysstat/sysstat (RHEL/CentOS)
+Service Unit       : sysstat.service / sysstat-collect.timer
+
+Enablement Steps (Debian/Ubuntu):
+  1. Open config: `sudo nano /etc/default/sysstat`
+  2. Change line: `ENABLED="false"` -> `ENABLED="true"`
+  3. Start & Enable service: `sudo systemctl enable --now sysstat`
+
+
+3. COMMAND SYNTAX & CRITICAL FLAGS
+--------------------------------------------------------------------------------
+Basic Syntax:
+  sar [flag] [options] [interval] [count]
+  sar [flag] -s [HH:MM:SS] -e [HH:MM:SS] -f [/path/to/saDD]
+
+Flag Reference:
+  sar -u          : CPU Utilization Statistics (%user, %system, %iowait, %idle).
+  sar -r          : Memory Allocation Statistics (free, used, %memused, buffers).
+  sar -S          : Swap Space Utilization (kbswpfree, kbswpused, %swpused).
+  sar -d -p       : Disk Partition & Device Stats (tps, await, %util).
+  sar -n DEV      : Network Interface Traffic (packets/sec, KB/sec in/out).
+  sar -q          : System Load Average & Run-Queue Size (ldavg-1, ldavg-5).
+  sar -A          : Dumps ALL available sub-system metrics into output.
+
+
+4. OUTPUT HEADERS, UNITS & HEALTHY RANGES
+--------------------------------------------------------------------------------
+A) CPU UTILIZATION (`sar -u`)
+   - Headers  : %user, %nice, %system, %iowait, %steal, %idle
+   - Unit     : Percentage (%)
+   - Threshold: %iowait > 15-20% = Disk I/O Bottleneck
+                %idle < 5%       = CPU Saturation
+
+B) MEMORY UTILIZATION (`sar -r`)
+   - Headers  : kbmemfree, kbmemused, %memused, kbbuffers, kbcached, %swpused
+   - Unit     : Kilobytes (KB) & Percentage (%)
+   - Threshold: %memused > 95% with high & growing %swpused = Memory Exhaustion
+
+C) NETWORK TRAFFIC (`sar -n DEV`)
+   - Headers  : IFACE, rxpck/s, txpck/s, rxkB/s, txkB/s
+   - Unit     : Packets/sec & Kilobytes/sec
+   - Threshold: Throughput approaching maximum physical NIC bandwidth limit
+
+
+5. HISTORICAL QUERY EXAMPLES
+--------------------------------------------------------------------------------
+Scenario 1: Inspect CPU load today between 02:00 AM and 03:30 AM
+  $ sar -u -s 02:00:00 -e 03:30:00
+
+Scenario 2: Inspect Memory usage on the 4th day of the current month
+  $ sar -r -f /var/log/sysstat/sa04
+
+Scenario 3: Inspect Network traffic on the 4th day between 14:00 and 16:00
+  $ sar -n DEV -s 14:00:00 -e 16:00:00 -f /var/log/sysstat/sa04
+
+Scenario 4: Export historical CPU report to a file
+  $ sar -u -f /var/log/sysstat/sa04 > /tmp/cpu_report_day04.txt
+================================================================================
+                                END OF NOTES
+================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+          FILE & PATH REFERENCE: MODULE 4 (vmstat, iostat, sar)
+================================================================================
+
+1. vmstat RELATED FILES
+--------------------------------------------------------------------------------
+* Binary Location       : /usr/bin/vmstat
+* System Package        : procps / procps-ng
+* Kernel Source Files   : /proc/meminfo   (RAM & Swap allocation statistics)
+                          /proc/stat      (CPU time breakdown & execution stats)
+                          /proc/vmstat    (Virtual memory event counters)
+* Daemon / Service      : None (Runs directly on demand)
+
+
+2. iostat RELATED FILES
+--------------------------------------------------------------------------------
+* Binary Location       : /usr/bin/iostat
+* System Package        : sysstat
+* Kernel Source Files   : /proc/diskstats (Disk read/write stats & IOPS counters)
+                          /proc/partitions (Active partitions & disk sizes)
+                          /sys/block/     (Block device properties & latency)
+* Daemon / Service      : None (Runs directly on demand)
+
+
+3. sar RELATED FILES
+--------------------------------------------------------------------------------
+* Binary Location       : /usr/bin/sar
+* Background Collector  : /usr/lib/sysstat/sadc (Data Collector engine)
+* System Package        : sysstat
+
+* Service Files         : /lib/systemd/system/sysstat.service
+                          /lib/systemd/system/sysstat-collect.timer
+
+* Configuration Files   : /etc/default/sysstat  (Debian / Ubuntu -> ENABLED="true")
+                          /etc/sysstat/sysstat  (RHEL / CentOS configuration)
+                          /etc/cron.d/sysstat   (Cron schedule for historical data)
+
+* Historical Data Logs  : /var/log/sysstat/saDD (Debian / Ubuntu binary log file)
+                          /var/log/sa/saDD      (RHEL / CentOS binary log file)
+                          *(Where 'DD' is the two-digit day of the month, e.g., sa05)*
+================================================================================
+                                END OF NOTES
+================================================================================

@@ -1,0 +1,501 @@
+Phase 6 — Processes
+ps *
+top *
+htop *
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+                      TOPIC: THE 'ps' (PROCESS STATUS) COMMAND
+================================================================================
+
+1. OVERVIEW & CORE CONCEPT
+--------------------------------------------------------------------------------
+Command Name : ps (Process Status)
+Purpose      : Generates a static snapshot of active processes currently running
+               in memory (RAM) and managed by the Linux kernel.
+Key Property : Unlike 'top' or 'htop', 'ps' does NOT auto-refresh. It takes a
+               point-in-time picture and exits immediately.
+
+Key Metrics Provided:
+- PID  : Unique Process ID assigned by the kernel.
+- PPID : Parent Process ID (the process that spawned/launched this process).
+- USER : System user account running the process.
+- CPU/MEM usage : Percentage of CPU time and physical RAM consumed.
+- STAT : Current execution state of the process.
+
+
+2. SYNTAX STYLES (TRIPLE SYNTAX STANDARD)
+--------------------------------------------------------------------------------
+The 'ps' command supports options in three distinct syntax styles. Mixing them 
+incorrectly causes syntax warnings or unexpected output.
+
+1. BSD Style (No Dash)      : ps aux
+2. UNIX / POSIX Style (-)   : ps -ef
+3. GNU Long Options (--)    : ps --forest
+
+* Note: 'ps aux' (BSD) is NOT identical to 'ps -aux' (UNIX). Stick to standard 
+  patterns to avoid errors.
+
+
+3. ESSENTIAL FLAGS REFERENCE
+--------------------------------------------------------------------------------
+[SELECTION FLAGS - WHICH PROCESSES TO SHOW]
+  a           (BSD)  : Selects all processes with a terminal (TTY) for all users.
+  x           (BSD)  : Includes processes without a controlling terminal 
+                       (e.g., background daemons, system services).
+  -e / -A     (UNIX) : Selects ALL processes across the entire system.
+  -u <user>   (UNIX) : Selects processes owned by a specific user (e.g., ps -u root).
+  -p <PIDs>   (UNIX) : Selects processes by specific PIDs (e.g., ps -p 1234,5678).
+  -C <name>   (UNIX) : Selects processes by executable command name (e.g., ps -C nginx).
+
+[FORMATTING FLAGS - HOW TO DISPLAY OUTPUT]
+  u           (BSD)  : Displays user-oriented format (%CPU, %MEM, USER, RSS, VSZ).
+  -f          (UNIX) : Displays full-format listing (adds PPID, STIME, C, TTY).
+  -o <fields> (UNIX) : User-defined custom output format.
+  --forest    (GNU)  : Renders ASCII tree showing parent-child process hierarchy.
+  -T          (UNIX) : Displays threads associated with processes.
+
+
+4. THE 4 GOLD STANDARD COMMAND PATTERNS
+--------------------------------------------------------------------------------
+
+PATTERN 1: ps aux
+Description : The universal default for full system diagnostic snapshot.
+Command     : ps aux
+
+Sample Output Breakdown:
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.1 168340 11420 ?        Ss   Jul30  0:03 /sbin/init
+root       890  0.0  0.0  15820  7100 ?        Ss   Jul30  0:00 /usr/sbin/sshd
+milan     2320  0.1  0.2  22450  8900 pts/0    S+   10:15  0:01 -bash
+
+Column Explanation:
+- USER    : Account that owns and started the process.
+- PID     : Process ID number.
+- %CPU    : Percentage of total CPU capacity consumed.
+- %MEM    : Percentage of physical RAM consumed.
+- VSZ     : Virtual Memory Size in Kilobytes (includes code, data, shared libs).
+- RSS     : Resident Set Size (Actual physical RAM used in KB).
+- TTY     : Terminal device attached. '?' means daemon running in background.
+- STAT    : Process state code (see section 5).
+- START   : Time or date the process was started.
+- TIME    : Cumulative CPU execution time consumed since start (MM:SS).
+- COMMAND : Executable path and runtime parameters.
+
+
+PATTERN 2: ps -ef
+Description : Best for identifying Parent-Child process dependencies (PPID).
+Command     : ps -ef
+
+Sample Output:
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 Jul30 ?        00:00:03 /sbin/init
+root       890     1  0 Jul30 ?        00:00:00 /usr/sbin/sshd -D
+milan     2314   890  0 10:15 ?        00:00:00 sshd: milan [priv]
+
+
+PATTERN 3: ps -ef --forest
+Description : Renders parent-child process hierarchy as a visual tree.
+Command     : ps -ef --forest
+
+Sample Output:
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 Jul30 ?        00:00:03 /sbin/init
+root       890     1  0 Jul30 ?        00:00:00  ├─ /usr/sbin/sshd -D
+milan     2314   890  0 10:15 ?        00:00:00  │   └─ sshd: milan [priv]
+milan     2320  2314  0 10:15 pts/0    00:00:00  │       └─ -bash
+
+
+PATTERN 4: ps -eo (Custom Output Formatting)
+Description : Selects specific columns for clean reporting or bash scripting.
+Command     : ps -eo pid,user,%cpu,%mem,comm
+
+
+5. DECODING PROCESS STATES ('STAT' COLUMN)
+--------------------------------------------------------------------------------
+Primary State Letters:
+  R : Running or Runnable (Actively executing or waiting in CPU run-queue).
+  S : Interruptible Sleep (Waiting for an event/input to wake up).
+  D : Uninterruptible Sleep (Waiting on disk/hardware I/O. CANNOT BE KILLED!).
+  T : Stopped / Traced (Paused via signal, e.g., Ctrl + Z).
+  Z : Zombie / Defunct (Terminated process whose exit code wasn't read by parent).
+
+Secondary State Modifiers:
+  < : High-priority process (not "nice" to others).
+  N : Low-priority process ("nice" to others).
+  s : Session leader process (e.g., your login shell).
+  l : Multi-threaded process.
+  + : Foreground process running in terminal.
+
+
+6. REAL-WORLD DEMO EXAMPLES & CHEAT SHEET
+--------------------------------------------------------------------------------
+# Demo 1: Find process ID of a specific service (e.g., nginx or python)
+ps aux | grep nginx
+
+# Demo 2: Find Top 5 memory-hogging processes
+ps aux --sort=-%mem | head -n 6
+
+# Demo 3: Find Top 5 CPU-hogging processes
+ps aux --sort=-%cpu | head -n 6
+
+# Demo 4: List all processes owned by a specific user
+ps -u milan -f
+
+# Demo 5: Monitor all light-weight threads for a specific PID (e.g., PID 1234)
+ps -T -p 1234
+
+# Demo 6: Custom layout sorting by RAM usage
+ps -eo pid,user,%mem,rss,comm --sort=-%mem
+
+# Demo 7: Find all Zombie processes on system
+ps aux | awk '{if ($8 ~ /Z/) print $0}'
+
+================================================================================
+                                END OF NOTES
+================================================================================
+
+
+
+
+
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+                      TOPIC: THE 'top' (TABLE OF PROCESSES) COMMAND
+================================================================================
+
+1. OVERVIEW & CORE CONCEPT
+--------------------------------------------------------------------------------
+Command Name : top (Table of Processes)
+Purpose      : Provides a dynamic, real-time interactive view of running 
+               processes, CPU load, memory utilization, and swap usage.
+Key Property : Unlike 'ps' (which gives a static snapshot), 'top' refreshes 
+               continuously every 3.0 seconds (default) until exited.
+
+Primary Uses :
+- Real-time performance monitoring during server slowdowns.
+- Identifying CPU or Memory hogging processes on the fly.
+- Inspecting overall system uptime, load averages, and RAM footprint.
+- Directly killing or modifying priorities of processes interactively.
+SYNTAX:
+  top [options]
+
+COMMAND-LINE FLAGS REFERENCE:
+--------------------------------------------------------------------------------
+Flag      Full Option       Description & Use Case
+--------------------------------------------------------------------------------
+-b        Batch Mode        Runs top without terminal graphics/interactive features.
+                            Essential for logging output to a file or pipe to grep.
+
+-n <num>  Number Iterations Specifies how many frame updates top displays before
+                            automatically exiting (used with -b).
+
+-d <sec>  Delay Time        Changes the screen refresh interval in seconds 
+                            (e.g., top -d 0.5 refreshes twice every second).
+
+-u <user> User Filter       Displays only processes owned by the specified username 
+          / -U <user>       or UID. (-u matches effective user, -U matches real user).
+
+-p <PIDs> PID Filter        Monitors ONLY specified Process IDs (comma-separated).
+                            Accepts up to 20 PIDs (e.g., top -p 1042,1050).
+
+-c        Command Line      Toggles command column to show full path and arguments 
+                            instead of just the executable process name.
+
+-i        Idle Processes    Toggles display of idle/zombie processes (hides 
+                            processes that haven't used CPU since last update).
+
+-H        Thread View       Toggles individual thread display instead of aggregating
+                            threads per process.
+
+-S        Cumulative Time   Toggles cumulative CPU time tracking (includes CPU time
+                            used by dead child processes).
+
+2. DEMONSTRATION & OUTPUT HEADER BREAKDOWN
+--------------------------------------------------------------------------------
+Command: top
+
+Sample Header Output:
+top - 15:30:00 up 12 days,  4:15,  2 users,  load average: 0.45, 0.82, 0.95
+Tasks: 215 total,   1 running, 214 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  4.2 us,  1.8 sy,  0.0 ni, 93.5 id,  0.3 wa,  0.0 hi,  0.2 si,  0.0 st
+MiB Mem :   7850.0 total,   1250.2 free,   4120.5 used,   2479.3 buff/cache
+MiB Swap:   2048.0 total,   2048.0 free,      0.0 used.   3350.1 avail Mem
+
+HEADER SECTION EXPLANATION:
+
+Line 1: System Summary & Load Average
+- 15:30:00   : Current system time.
+- up 12 days : Total system uptime (how long server has been running without reboot).
+- 2 users    : Number of active logged-in terminal sessions.
+- load avg   : Average system load over 1-minute, 5-minutes, and 15-minutes.
+               *(Rule of Thumb: A load average higher than your total CPU cores 
+                 indicates system overload/queuing).*
+
+Line 2: Task States Summary
+- total      : Total count of all managed processes.
+- running    : Processes actively executing on CPU right now.
+- sleeping   : Processes waiting for I/O, user input, or timers.
+- stopped    : Processes paused by user signal (e.g., Ctrl+Z).
+- zombie     : Terminated processes waiting for parent to collect exit status.
+
+Line 3: CPU Usage Breakdown (%Cpu(s))
+- us (User)   : CPU time spent running non-root user applications.
+- sy (System) : CPU time spent running kernel/system operations.
+- ni (Nice)   : CPU time spent on low-priority user tasks.
+- id (Idle)   : Unused CPU capacity (Higher is better!).
+- wa (I/O Wait): CPU time waiting for disk/network reads/writes. 
+                *(High 'wa' means slow disk storage or disk bottleneck).*
+- hi / si     : Hardware / Software interrupt processing time.
+- st (Steal)  : CPU time stolen by hypervisor (relevant in VM/Cloud environments).
+
+Lines 4 & 5: Physical Memory (RAM) & Swap Space
+- total / free / used : Breakdown of RAM and Swap space.
+- buff/cache          : Memory used by Linux kernel for caching disk data.
+- avail Mem           : Estimated RAM available for starting new applications.
+
+
+3. PROCESS LIST COLUMNS EXPLANATION
+--------------------------------------------------------------------------------
+PID    USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+ 1420  milan     20   0 1254300 354200 120400 S  12.5   4.4   2:15.34 java
+ 2810  root      20   0  162400   8900   6100 R   2.3   0.1   0:00.12 top
+
+Key Columns:
+- PR      : Priority assigned by kernel (0 to 39; 20 is default).
+- NI      : "Nice" value (-20 = Highest priority, 19 = Lowest priority).
+- VIRT    : Total Virtual Memory reserved by process.
+- RES     : Resident Memory -> Actual Physical RAM used (In KB/MB).
+- SHR     : Shared Memory accessible by other processes.
+- S       : Process state code (R = Running, S = Sleeping, D = Disk Sleep, Z = Zombie).
+- TIME+   : Cumulative CPU time consumed since launch (Format: Minutes:Seconds.Hundredths).
+
+
+4. ESSENTIAL INTERACTIVE SHORTCUTS (INSIDE 'top')
+--------------------------------------------------------------------------------
+While 'top' is running on your screen, press these single-key shortcuts:
+
+[SORTING METRICS]
+  P  : Sort process list by %CPU consumption (Default view).
+  M  : Sort process list by %MEM (Memory) consumption.
+  N  : Sort process list by Process ID (PID).
+  T  : Sort process list by total CPU execution time (TIME+).
+
+[INTERACTIVE PROCESS MANAGEMENT]
+  k  : Kill a process. (Prompts for PID, then signal number, e.g., 9 or 15).
+  r  : Renice a process. (Changes priority level of a PID).
+  u  : Filter process list by specific Username (e.g., show only 'milan' processes).
+
+[DISPLAY & NAVIGATION CONTROL]
+  1  : Toggle multi-core CPU view (Shows individual CPU core stats).
+  c  : Toggle display between short command name and full command path/arguments.
+  d or s : Change refresh delay interval (Default is 3.0 seconds).
+  z  : Toggle color display on/off.
+  q  : Quit 'top' immediately.
+
+
+5. NON-INTERACTIVE & BATCH DEMO COMMANDS
+--------------------------------------------------------------------------------
+# Demo 1: Run top in Batch Mode for a single snapshot (Great for scripts/logging)
+top -b -n 1
+
+# Demo 2: Monitor a specific user's processes only
+top -u milan
+
+# Demo 3: Monitor a specific PID only (e.g., PID 1420)
+top -p 1420
+
+# Demo 4: Output top snapshot every 1 second for 5 iterations
+top -d 1 -n 5
+REAL-WORLD COMMAND-LINE EXAMPLES:
+--------------------------------------------------------------------------------
+# Example 1: Capture a single snapshot of system load into a log file
+top -b -n 1 > server_health_snapshot.txt
+
+# Example 2: Monitor a database server PID with 1-second refresh rate
+top -p 3306 -d 1
+
+# Example 3: Save top 10 memory-hogging processes to a log every 2 seconds (5 times)
+top -b -n 5 -d 2 -o %MEM | head -n 17 > memory_trend.log
+
+# Example 4: Track only processes owned by the 'www-data' web user
+top -u www-data
+
+# Example 5: View all lightweight threads for a specific process (e.g., Java app)
+top -H -p 4120
+
+================================================================================
+                                END OF NOTES
+================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+                   TOPIC: THE 'htop' INTERACTIVE PROCESS MONITOR
+================================================================================
+
+1. OVERVIEW & CORE CONCEPT
+--------------------------------------------------------------------------------
+Command Name : htop
+Purpose      : An enhanced, interactive, colorized real-time process viewer and 
+               system monitor for Linux.
+Key Property : Serves as a modern replacement for the traditional 'top' command.
+               Supports mouse interaction, vertical and horizontal scrolling,
+               visual usage bars, and direct process management without typing PIDs.
+
+Key Advantages Over 'top':
+- Color-coded graphical bars for individual CPU cores, RAM, and Swap.
+- Mouse scrolling and point-and-click selection supported out-of-the-box.
+- Horizontal scrolling to read full command lines and arguments.
+- Tree view mode (`F5`) to view parent-child process relationships natively.
+- Direct process management (Kill, Renice, Filter) via dedicated function keys.
+
+
+2. INSTALLATION
+--------------------------------------------------------------------------------
+Since `htop` is usually not pre-installed by default on minimal Linux server 
+images, install it using your package manager:
+
+Ubuntu/Debian : sudo apt update && sudo apt install htop
+RHEL/Rocky    : sudo dnf install htop
+Arch Linux    : sudo pacman -S htop
+
+
+3. COMMAND-LINE FLAGS REFERENCE
+--------------------------------------------------------------------------------
+SYNTAX:
+  htop [options]
+
+--------------------------------------------------------------------------------
+Flag          Full Option      Description & Use Case
+--------------------------------------------------------------------------------
+-d --delay    Delay Time       Sets display refresh delay in tenths of a second 
+                               (e.g., htop -d 10 refreshes every 1 second).
+
+-u --user     User Filter      Displays only processes belonging to the specified 
+                               username or UID (e.g., htop -u milan).
+
+-p --pid      PID Filter       Monitors ONLY specified PIDs, provided as a 
+                               comma-separated list (e.g., htop -p 1042,1050).
+
+-s --sort-key Sort Column      Sorts output initially by a specific column name 
+                               (e.g., htop -s PERCENT_MEM or htop -s PERCENT_CPU).
+
+-t --tree     Tree View        Launches htop directly in tree display mode.
+
+-C --no-color Monochromatic    Runs htop in black-and-white mode (useful for 
+                               terminals without color support or logging).
+
+-v --version  Version          Prints software version and exits.
+
+
+4. HEADER DISPLAY & METRIC BAR EXPLANATION
+--------------------------------------------------------------------------------
+Command: htop
+
+Sample Header Section (Visual Bars):
+  1  [|||||||||||||||||||||||||||||52.0%]    Tasks: 85, 230 thr; 1 running
+  2  [|||||||||||                  21.5%]    Load average: 0.45 0.82 0.95
+  3  [||||||                       12.0%]    Uptime: 12 days, 04:15:22
+  4  [|||||||||||||||||            34.2%]
+  Mem[|||||||||||||||||||||  3.20G/7.67G]
+  Swp[                       0.00K/2.00G]
+
+HEADER BAR COLOR CODES EXPLANATION:
+
+CPU Meter Colors (per core):
+- Blue   : Low-priority threads (nice > 0).
+- Green  : Normal user-space threads/processes.
+- Red    : Kernel/System operations time.
+- Cyan   : Virtualization steal time.
+
+Memory Meter Colors (Mem):
+- Green  : Physical RAM used by running processes.
+- Blue   : Memory allocated for disk buffers.
+- Orange : Memory allocated for page cache.
+
+Swap Meter Colors (Swp):
+- Red    : Swap space actively being used (indicates physical RAM exhaustion).
+
+
+5. PROCESS LIST COLUMNS EXPLANATION
+--------------------------------------------------------------------------------
+PID USER PRI  NI  VIRT   RES   SHR S CPU% MEM%   TIME+  Command
+1420 milan  20   0 1254M  345M  120M S 12.5  4.4  2:15.34 /usr/bin/java -jar app.jar
+
+Column Breakdown:
+- PID     : Process ID number.
+- USER    : System user owning the process.
+- PRI     : Priority assigned by Linux kernel (0 to 39).
+- NI      : "Nice" value (-20 = Highest priority, 19 = Lowest priority).
+- VIRT    : Total Virtual Memory allocated (Includes libraries and mapped files).
+- RES     : Resident Set Size -> Actual physical RAM consumed.
+- SHR     : Shared Memory used across multiple processes.
+- S       : Process state code (R = Running, S = Sleeping, D = Disk Sleep, Z = Zombie).
+- CPU%    : Current percentage of CPU capacity consumed.
+- MEM%    : Percentage of total physical RAM consumed.
+- TIME+   : Total CPU time consumed since launch (Minutes:Seconds.Hundredths).
+- Command : Full executable path, binary name, and command-line arguments.
+
+
+6. ESSENTIAL INTERACTIVE FUNCTION KEYS & SHORTCUTS
+--------------------------------------------------------------------------------
+While inside `htop`, press these keyboard keys (or click bottom navigation bar):
+
+[PRIMARY FUNCTION KEYS]
+  F1 / ? : Open Help screen (lists all hotkeys and commands).
+  F2 / S : Open Setup menu (customize header layout, meters, and display colors).
+  F3 / / : Incremental Search (type process name to highlight matches).
+  F4 / \ : Filter processes (hides non-matching processes dynamically).
+  F5 / t : Toggle Tree View on/off (shows parent-child hierarchy).
+  F6 / > : Sort Menu (select column to sort by: CPU%, MEM%, PID, etc.).
+  F7 / ] : Increase priority ("Nice" the process; requires root for negative nice).
+  F8 / [ : Decrease priority ("Renice" the process; makes it nicer to system).
+  F9 / k : Kill Menu (opens list of signals like SIGTERM-15, SIGKILL-9 to send).
+  F10 / q: Quit htop.
+
+[NAVIGATION & SELECTION SHORTCUTS]
+  Space  : Tag/Untag a selected process (allows batch operations on tagged processes).
+  U      : Untag all tagged processes.
+  u      : Filter and show processes owned by a selected user.
+  H      : Toggle visibility of user threads on/off.
+  K      : Toggle visibility of kernel threads on/off.
+  p      : Toggle full program path display on/off.
+  l      : Open `lsof` list of open files for highlighted process (if lsof installed).
+  s      : Attach `strace` to highlighted process to view live system calls.
+
+
+7. REAL-WORLD COMMAND EXAMPLES
+--------------------------------------------------------------------------------
+# Example 1: Launch htop sorted directly by Memory usage
+htop -s PERCENT_MEM
+
+# Example 2: Monitor processes for a specific service user (e.g., 'nginx')
+htop -u nginx
+
+# Example 3: Launch directly in parent-child tree hierarchy mode
+htop -t
+
+# Example 4: Track a specific set of PIDs with 1-second refresh rate
+htop -p 1234,5678 -d 10
+
+================================================================================
+                                END OF NOTES
+================================================================================

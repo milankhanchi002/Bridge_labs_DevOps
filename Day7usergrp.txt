@@ -1,0 +1,65 @@
+useradd.   
+usermod.   
+userdel -r 
+groupadd.  
+groupmod.  
+groupdel
+passwd
+
+
+
+
+useradd
+useradd -m                            Create home directory
+useradd -s /bin/bash                  Set default shell
+useradd -g primarygroup               Set primary group
+useradd -G secondarygroup             Set secondary groups
+useradd -u 1004                       Assign custom User ID
+useradd -d /home/milan                Set custom home directory path
+useradd -e YYYY-MM-DD                 Set account expiration date
+
+
+
+
+
+
+
+usermod
+sudo usermod -aG sudo username      # User ko sudo/admin privileges do
+sudo usermod -s /bin/bash username  # Shell ko bash par switch karo
+sudo usermod -L username            # Account temporarily block karo
+sudo usermod -U username            # Account unblock/unlock karo
+usermod -d /home/milan                Set custom home directory path
+usermod -l newusername 
+
+
+
+
+
+userdel -r milan                delete user with home directory
+
+
+
+
+
+groupadd -g 1008.               custom gid
+
+
+
+
+groupmod -n newname oldname          rename group
+
+
+
+
+
+
+passwd
+passwd                  # Change your own password
+sudo passwd username    # Reset password for any user
+sudo passwd -e username # Force password change on next login
+sudo passwd -l username # Lock user account
+sudo passwd -u username # Unlock user account
+sudo passwd -S username # Check password status
+
+sudo passwd -x 90 -n 7 -w 14 john xpire notchange pass warnign before expire days

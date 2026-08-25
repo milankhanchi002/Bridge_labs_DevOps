@@ -1,0 +1,2073 @@
+CURL -V / CURL -VERBOSE OUTPUT — COMPLETE NETWORKING EXPLANATION
+===============================================================
+
+Command used:
+    curl -v https://google.com
+
+What does -v mean?
+------------------
+-v means verbose mode.
+
+Normally curl only shows the response body.
+
+With -v, curl shows the complete communication process, including:
+
+DNS resolution
+IPv6 / IPv4 selection
+TCP connection
+TLS handshake
+Certificate verification
+ALPN negotiation
+HTTP/2 communication
+HTTP request
+HTTP response
+Redirect
+Connection status
+
+
+===============================================================
+1. COMPLETE NETWORK FLOW
+===============================================================
+
+When we run:
+
+    curl -v https://google.com
+
+The basic networking flow is:
+
+    URL
+     |
+     v
+    DNS Resolution
+     |
+     v
+    IP Address
+     |
+     v
+    Routing
+     |
+     v
+    TCP Connection
+     |
+     v
+    TLS Handshake
+     |
+     v
+    Certificate Verification
+     |
+     v
+    ALPN Negotiation
+     |
+     v
+    HTTP/2
+     |
+     v
+    HTTP GET Request
+     |
+     v
+    HTTP Response
+
+
+In this particular output:
+
+    google.com
+         |
+         v
+    DNS Resolution
+         |
+         +------ IPv6 -> FAILED
+         |
+         +------ IPv4 -> SUCCESS
+                         |
+                         v
+                    TCP :443
+                         |
+                         v
+                    TLS 1.3
+                         |
+                         v
+                Certificate Verified
+                         |
+                         v
+                     HTTP/2
+                         |
+                         v
+                      GET /
+                         |
+                         v
+                     HTTP 301
+                         |
+                         v
+             https://www.google.com/
+
+
+===============================================================
+2. DNS RESOLUTION
+===============================================================
+
+Output:
+
+    * Host google.com:443 was resolved.
+    * IPv6: 2404:6800:4002:81b::200e
+    * IPv4: 142.250.182.206
+
+
+Meaning:
+
+google.com is a domain name.
+
+Computers communicate using IP addresses, so the domain name must first
+be translated into an IP address.
+
+DNS = Domain Name System
+
+DNS performs:
+
+    Domain Name
+         |
+         v
+    IP Address
+
+Example:
+
+    google.com
+         |
+         v
+    142.250.182.206
+
+
+Google returned both:
+
+IPv6:
+
+    2404:6800:4002:81b::200e
+
+IPv4:
+
+    142.250.182.206
+
+
+Why are there two?
+
+Because the Internet supports:
+
+    IPv4
+    IPv6
+
+
+Conceptually:
+
+    curl
+      |
+      | DNS Query
+      v
+    DNS Resolver
+      |
+      +---- IPv6 address
+      |
+      +---- IPv4 address
+
+
+Important:
+
+DNS does NOT establish the connection.
+
+DNS only helps us find the IP address of the destination.
+
+
+===============================================================
+3. IPv6 ATTEMPT
+===============================================================
+
+Output:
+
+    * Trying [2404:6800:4002:81b::200e]:443...
+
+
+Curl is trying to connect to:
+
+    IPv6 address
+        +
+    TCP port 443
+
+
+Port 443 normally means HTTPS.
+
+
+Then:
+
+    * Immediate connect fail for
+      2404:6800:4002:81b::200e:
+      Network is unreachable
+
+
+Meaning:
+
+The machine knows the IPv6 address, but it does not have a usable
+network route to reach that IPv6 destination.
+
+
+This does NOT mean:
+
+    Google is down.
+
+It means:
+
+    Your machine/network does not currently have a working IPv6 path.
+
+
+Conceptually:
+
+    Your Machine
+         |
+         | IPv6 packet
+         X
+      No IPv6 route
+         |
+         X
+      Destination
+
+
+Useful Linux commands:
+
+    ip -6 addr
+
+Shows IPv6 addresses configured on interfaces.
+
+    ip -6 route
+
+Shows IPv6 routing table.
+
+
+===============================================================
+4. IPv4 FALLBACK
+===============================================================
+
+After IPv6 fails, curl tries IPv4:
+
+    * Trying 142.250.182.206:443...
+
+
+Now curl tries:
+
+    Destination IP = 142.250.182.206
+    Destination Port = 443
+
+
+This succeeds.
+
+
+Conceptually:
+
+    Your Machine
+    192.168.64.5
+          |
+          | IPv4
+          |
+          v
+    142.250.182.206
+       Google
+
+
+This is an example of IPv4 fallback when IPv6 connectivity is not available.
+
+
+===============================================================
+5. TCP CONNECTION
+===============================================================
+
+HTTPS normally uses:
+
+    TCP port 443
+
+
+The output later says:
+
+    * Established connection to google.com
+      (142.250.182.206 port 443)
+      from 192.168.64.5 port 52184
+
+
+This tells us:
+
+Client:
+
+    IP   = 192.168.64.5
+    Port = 52184
+
+
+Server:
+
+    IP   = 142.250.182.206
+    Port = 443
+
+
+So the connection is:
+
+    192.168.64.5:52184
+            |
+            | TCP
+            |
+            v
+    142.250.182.206:443
+
+
+Important concept:
+
+The client usually gets a temporary/ephemeral port.
+
+The server listens on a well-known service port.
+
+Here:
+
+    Client port = 52184
+    Server port = 443
+
+
+===============================================================
+6. TCP THREE-WAY HANDSHAKE
+===============================================================
+
+Before TLS starts, TCP must establish a connection.
+
+TCP uses the three-way handshake:
+
+    Client                         Server
+      |                              |
+      | -------- SYN --------------> |
+      | <------- SYN-ACK ----------- |
+      | -------- ACK --------------> |
+      |                              |
+      |       TCP established        |
+
+
+The three steps are:
+
+    1. SYN
+    2. SYN-ACK
+    3. ACK
+
+
+Important:
+
+TLS does NOT happen before TCP when HTTPS is running over TCP.
+
+The order is:
+
+    DNS
+      |
+    TCP
+      |
+    TLS
+      |
+    HTTP
+
+
+===============================================================
+7. ALPN
+===============================================================
+
+Output:
+
+    * ALPN: curl offers h2,http/1.1
+
+
+ALPN means:
+
+    Application-Layer Protocol Negotiation
+
+
+Curl tells the server:
+
+    I support:
+        HTTP/2
+        HTTP/1.1
+
+
+Here:
+
+    h2 = HTTP/2
+
+
+Then Google responds:
+
+    * ALPN: server accepted h2
+
+
+Therefore:
+
+    HTTP/2
+
+
+will be used.
+
+
+Conceptually:
+
+    Client
+       |
+       | I support HTTP/2 and HTTP/1.1
+       v
+    Server
+       |
+       | Let's use HTTP/2
+       v
+    HTTP/2
+
+
+===============================================================
+8. TLS HANDSHAKE
+===============================================================
+
+After TCP is established, HTTPS needs encryption.
+
+Output:
+
+    * TLSv1.3 (OUT): TLS handshake, Client hello (1)
+
+
+This means the TLS handshake has started.
+
+
+HTTPS conceptually works as:
+
+    TCP
+     |
+     v
+    TLS
+     |
+     v
+    HTTP
+
+
+TLS provides:
+
+    Encryption
+    Authentication
+    Integrity
+
+
+The goal is to create a secure encrypted communication channel.
+
+
+===============================================================
+9. CLIENT HELLO
+===============================================================
+
+Output:
+
+    TLSv1.3 (OUT): TLS handshake, Client hello (1)
+
+
+ClientHello is sent by the client.
+
+It contains information such as:
+
+    Supported TLS versions
+    Supported cipher suites
+    Cryptographic capabilities
+    Key exchange information
+    Extensions
+    ALPN information
+
+
+Conceptually:
+
+    Client
+       |
+       | ClientHello
+       |
+       | "I support TLS 1.3"
+       | "I support these algorithms"
+       | "I support HTTP/2"
+       v
+    Server
+
+
+===============================================================
+10. SERVER HELLO
+===============================================================
+
+Output:
+
+    * TLSv1.3 (IN): TLS handshake, Server hello (2)
+
+
+The server responds with ServerHello.
+
+The server chooses appropriate cryptographic parameters from
+the options provided by the client.
+
+
+Conceptually:
+
+    ClientHello
+         |
+         v
+    ServerHello
+         |
+         v
+    Continue TLS handshake
+
+
+===============================================================
+11. TLS CHANGE CIPHER SPEC
+===============================================================
+
+Output:
+
+    TLS change cipher, Change cipher spec
+
+
+This is part of the TLS handshake process.
+
+The important conceptual idea is:
+
+    TLS is transitioning toward encrypted communication.
+
+
+For interview understanding, remember the bigger flow:
+
+    ClientHello
+         |
+         v
+    ServerHello
+         |
+         v
+    Certificate
+         |
+         v
+    Key establishment / authentication
+         |
+         v
+    Encrypted communication
+
+
+===============================================================
+12. SERVER CERTIFICATE
+===============================================================
+
+Output:
+
+    * TLSv1.3 (IN): TLS handshake, Certificate (11)
+
+
+The server sends its TLS certificate to the client.
+
+
+The certificate contains information about the identity of the server.
+
+
+Output:
+
+    * Server certificate:
+    * subject: CN=*.google.com
+
+
+This certificate belongs to:
+
+    *.google.com
+
+
+The * is a wildcard.
+
+It can cover appropriate subdomains such as:
+
+    www.google.com
+    mail.google.com
+
+
+depending on the certificate's SAN rules.
+
+
+===============================================================
+13. CERTIFICATE VALIDITY
+===============================================================
+
+Output:
+
+    start date: Jul 20 18:05:56 2026 GMT
+    expire date: Oct 12 18:05:55 2026 GMT
+
+
+The certificate has a validity period.
+
+The client checks whether the certificate is:
+
+    Not expired
+    Not yet valid
+
+
+Conceptually:
+
+    Certificate
+        |
+        +---- Valid date?
+        |
+        +---- Expired?
+        |
+        +---- Hostname matches?
+        |
+        +---- Trusted issuer?
+        |
+        +---- Certificate chain valid?
+
+
+===============================================================
+14. CERTIFICATE ISSUER
+===============================================================
+
+Output:
+
+    issuer:
+    C=US;
+    O=Google Trust Services;
+    CN=WR2
+
+
+This tells us who issued/signed the certificate.
+
+Issuer:
+
+    Google Trust Services
+
+
+The client does not blindly trust every certificate.
+
+The system has a list of trusted Certificate Authorities.
+
+
+===============================================================
+15. CA TRUST STORE
+===============================================================
+
+Output:
+
+    * SSL Trust Anchors:
+    * CAfile: /etc/ssl/certs/ca-certificates.crt
+    * CApath: /etc/ssl/certs
+
+
+Linux systems maintain trusted Certificate Authorities.
+
+Important locations:
+
+    /etc/ssl/certs/
+
+and commonly:
+
+    /etc/ssl/certs/ca-certificates.crt
+
+
+The CA bundle contains trusted CA certificates.
+
+
+Conceptually:
+
+    Google Certificate
+            |
+            v
+    Certificate Issuer
+            |
+            v
+    Trusted CA?
+            |
+          YES
+            |
+            v
+    Certificate Trusted
+
+
+This is very important in Linux/DevOps.
+
+
+If the CA trust store is missing or incorrectly configured,
+curl may show errors such as:
+
+    SSL certificate problem:
+    unable to get local issuer certificate
+
+
+===============================================================
+16. CERTIFICATE CHAIN
+===============================================================
+
+Output contains:
+
+    Certificate level 0
+    Certificate level 1
+    Certificate level 2
+
+
+Certificates form a trust chain.
+
+Conceptually:
+
+    Root CA
+       |
+       v
+    Intermediate CA
+       |
+       v
+    Server Certificate
+       |
+       v
+    google.com
+
+
+The client verifies this chain to establish trust.
+
+
+Usually:
+
+    Level 0
+        = Server certificate
+
+    Level 1
+        = Intermediate certificate
+
+    Level 2
+        = Higher/root certificate
+
+
+===============================================================
+17. HOSTNAME VERIFICATION
+===============================================================
+
+Output:
+
+    * subjectAltName: "google.com" matches cert's "google.com"
+
+
+This is extremely important.
+
+The client requested:
+
+    google.com
+
+
+The certificate contains:
+
+    google.com
+
+
+Therefore:
+
+    Requested hostname
+            |
+            v
+        google.com
+            |
+            v
+    Certificate SAN
+            |
+            v
+        google.com
+            |
+            v
+          MATCH
+
+
+If the hostname did not match, TLS verification could fail.
+
+
+Modern hostname verification primarily uses:
+
+    Subject Alternative Name (SAN)
+
+
+===============================================================
+18. CERTIFICATE VERIFICATION SUCCESS
+===============================================================
+
+Output:
+
+    * SSL certificate verified via OpenSSL.
+
+
+This means OpenSSL successfully verified the certificate.
+
+Checks include concepts such as:
+
+    Certificate validity
+    Certificate chain
+    Trusted CA
+    Hostname
+    Signature
+
+
+At this point:
+
+    DNS              = SUCCESS
+    TCP              = SUCCESS
+    TLS              = SUCCESS
+    Certificate      = SUCCESS
+    Hostname         = SUCCESS
+
+
+===============================================================
+19. TLS VERSION AND CRYPTOGRAPHY
+===============================================================
+
+Output:
+
+    * SSL connection using TLSv1.3 /
+      TLS_AES_256_GCM_SHA384 /
+      X25519MLKEM768 /
+      id-ecPublicKey
+
+
+This tells us the cryptographic parameters selected for the connection.
+
+
+TLS version:
+
+    TLSv1.3
+
+
+Cipher suite:
+
+    TLS_AES_256_GCM_SHA384
+
+
+Key exchange / cryptographic mechanisms include:
+
+    X25519MLKEM768
+    id-ecPublicKey
+
+
+For DevOps interviews, the important concept is:
+
+    TLS negotiates cryptographic parameters and establishes
+    secure keys so application data can be encrypted.
+
+
+You do not need to memorize every cryptographic detail initially.
+
+
+===============================================================
+20. HTTP/2
+===============================================================
+
+Output:
+
+    * using HTTP/2
+
+
+Earlier:
+
+    ALPN: curl offers h2,http/1.1
+
+Then:
+
+    server accepted h2
+
+
+Therefore:
+
+    HTTP/2
+
+
+is being used.
+
+
+Conceptually:
+
+    TCP
+      |
+      v
+    TLS
+      |
+      v
+    HTTP/2
+
+
+===============================================================
+21. HTTP/2 STREAM
+===============================================================
+
+Output:
+
+    * [HTTP/2] [1] OPENED stream for https://google.com/
+
+
+HTTP/2 uses streams.
+
+A stream is a logical communication channel inside an HTTP/2 connection.
+
+
+Here:
+
+    Stream ID = 1
+
+
+One HTTP/2 TCP connection can carry multiple streams.
+
+
+Conceptually:
+
+    One TCP connection
+          |
+          +---- Stream 1
+          |
+          +---- Stream 3
+          |
+          +---- Stream 5
+          |
+          +---- ...
+
+
+This allows HTTP/2 to multiplex requests/responses over
+a single connection.
+
+
+===============================================================
+22. HTTP GET REQUEST
+===============================================================
+
+Output:
+
+    > GET / HTTP/2
+
+
+GET means:
+
+    "Give me the resource."
+
+
+The path:
+
+    /
+
+
+means the root resource of the website.
+
+
+So:
+
+    GET /
+
+
+is essentially asking:
+
+    Give me the homepage/root resource.
+
+
+===============================================================
+23. HTTP/2 PSEUDO HEADERS
+===============================================================
+
+Output:
+
+    [:method: GET]
+    [:scheme: https]
+    [:authority: google.com]
+    [:path: /]
+
+
+These are HTTP/2 pseudo-headers.
+
+
+[:method:]
+
+    GET
+
+The HTTP method being used.
+
+
+[:scheme:]
+
+    https
+
+The scheme/protocol.
+
+
+[:authority:]
+
+    google.com
+
+The destination hostname.
+
+
+[:path:]
+
+    /
+
+The requested resource path.
+
+
+Together:
+
+    GET https://google.com/
+
+
+===============================================================
+24. USER-AGENT
+===============================================================
+
+Output:
+
+    > user-agent: curl/8.18.0
+
+
+This tells the server which client software is making the request.
+
+Here:
+
+    curl
+    version 8.18.0
+
+
+A browser would send something different.
+
+
+For example, a browser User-Agent usually contains information
+about the browser and operating system.
+
+
+===============================================================
+25. ACCEPT HEADER
+===============================================================
+
+Output:
+
+    > accept: */*
+
+
+This means:
+
+    The client can accept any media/content type.
+
+
+Examples of content types:
+
+    text/html
+    application/json
+    image/png
+    text/plain
+
+
+The wildcard:
+
+    *
+
+
+means "any".
+
+
+So:
+
+    */*
+
+means:
+
+    Accept any content type.
+
+
+===============================================================
+26. REQUEST COMPLETELY SENT
+===============================================================
+
+Output:
+
+    * Request completely sent off
+
+
+This means curl has finished sending the HTTP request.
+
+Now the client waits for the server response.
+
+
+Flow:
+
+    Client
+       |
+       | HTTP Request
+       v
+    Google
+       |
+       | processing
+       |
+       v
+    HTTP Response
+
+
+===============================================================
+27. HTTP 301 RESPONSE
+===============================================================
+
+Output:
+
+    < HTTP/2 301
+
+
+HTTP status code:
+
+    301
+
+
+means:
+
+    Moved Permanently
+
+
+Google is telling the client:
+
+    This URL has been permanently redirected to another URL.
+
+
+===============================================================
+28. LOCATION HEADER
+===============================================================
+
+Output:
+
+    < location: https://www.google.com/
+
+
+The server is telling curl where the new URL is.
+
+
+Original:
+
+    https://google.com/
+
+
+Redirect:
+
+    https://www.google.com/
+
+
+Conceptually:
+
+    curl
+      |
+      | GET https://google.com/
+      v
+    Google
+      |
+      | 301
+      |
+      | Location:
+      | https://www.google.com/
+      v
+    https://www.google.com/
+
+
+===============================================================
+29. CURL -L
+===============================================================
+
+By default:
+
+    curl https://google.com
+
+
+shows the 301 redirect response.
+
+
+If you want curl to automatically follow redirects:
+
+    curl -L https://google.com
+
+
+Meaning:
+
+    -L = follow HTTP redirects
+
+
+So:
+
+    curl
+      |
+      | google.com
+      v
+    301
+      |
+      | Follow Location
+      v
+    www.google.com
+      |
+      v
+    Final response
+
+
+===============================================================
+30. CONTENT-TYPE
+===============================================================
+
+Output:
+
+    < content-type: text/html; charset=UTF-8
+
+
+This tells the client:
+
+    Content type = HTML
+    Character encoding = UTF-8
+
+
+So the response body is HTML.
+
+
+===============================================================
+31. DATE HEADER
+===============================================================
+
+Output:
+
+    < date: Sat, 08 Aug 2026 05:28:32 GMT
+
+
+This is the server response time.
+
+GMT is equivalent to UTC for this context.
+
+
+India uses:
+
+    IST = UTC + 5:30
+
+
+===============================================================
+32. CACHE-CONTROL
+===============================================================
+
+Output:
+
+    < cache-control: public, max-age=2592000
+
+
+max-age is given in seconds.
+
+
+2592000 seconds is approximately:
+
+    30 days
+
+
+This tells caches how long the response can be considered
+fresh under the specified caching rules.
+
+
+===============================================================
+33. SERVER HEADER
+===============================================================
+
+Output:
+
+    < server: gws
+
+
+This identifies Google's web server infrastructure.
+
+
+For our learning purpose:
+
+    server: gws
+
+
+indicates Google's web serving infrastructure.
+
+
+===============================================================
+34. ALT-SVC
+===============================================================
+
+Output:
+
+    < alt-svc:
+      h3=":443";
+      ma=2592000,
+      h3-29=":443";
+      ma=2592000
+
+
+Google is advertising support for HTTP/3.
+
+
+HTTP/3 uses:
+
+    QUIC
+
+
+QUIC runs over:
+
+    UDP
+
+
+Comparison:
+
+HTTP/1.1:
+
+    TCP
+     |
+    HTTP/1.1
+
+
+HTTP/2:
+
+    TCP
+     |
+    TLS
+     |
+    HTTP/2
+
+
+HTTP/3:
+
+    UDP
+     |
+    QUIC
+     |
+    HTTP/3
+
+
+Important:
+
+This particular request used:
+
+    HTTP/2
+
+
+It did NOT use HTTP/3.
+
+
+The Alt-Svc header is informing the client that HTTP/3 is available.
+
+
+===============================================================
+35. CONNECTION LEFT INTACT
+===============================================================
+
+Output:
+
+    * Connection #0 to host google.com:443 left intact
+
+
+This means curl kept the connection available instead of immediately
+destroying the underlying connection.
+
+Connection reuse can improve performance when multiple requests are made.
+
+
+===============================================================
+36. UNDERSTANDING THE CLIENT IP
+===============================================================
+
+Output:
+
+    from 192.168.64.5 port 52184
+
+
+Client:
+
+    IP   = 192.168.64.5
+    Port = 52184
+
+
+192.168.64.5 is a private IPv4 address.
+
+
+Private IPv4 ranges include:
+
+    10.0.0.0/8
+
+    172.16.0.0/12
+
+    192.168.0.0/16
+
+
+192.168.64.5 belongs to:
+
+    192.168.0.0/16
+
+
+Therefore it is a private address.
+
+
+Normally the architecture looks like:
+
+    Your Machine
+    192.168.64.5
+          |
+          | NAT
+          v
+    Router / Host
+          |
+          v
+       Internet
+          |
+          v
+       Google
+          |
+          v
+    142.250.182.206
+
+
+Google normally sees the public IP of your network,
+not your private address 192.168.64.5.
+
+
+===============================================================
+37. WHY DOES THE CLIENT HAVE PORT 52184?
+===============================================================
+
+Output:
+
+    from 192.168.64.5 port 52184
+
+
+52184 is an ephemeral/dynamic client port.
+
+
+The client needs a source port so that the operating system can
+identify the connection.
+
+
+The connection can be represented as:
+
+    Source:
+        192.168.64.5:52184
+
+    Destination:
+        142.250.182.206:443
+
+
+A TCP connection is identified using a combination of:
+
+    Source IP
+    Source Port
+    Destination IP
+    Destination Port
+    Protocol
+
+
+Example:
+
+    192.168.64.5:52184
+            |
+            |
+            v
+    142.250.182.206:443
+
+
+===============================================================
+38. COMPLETE OSI / TCP-IP PERSPECTIVE
+===============================================================
+
+This single curl request demonstrates multiple networking layers.
+
+
+Application Layer:
+
+    HTTP/2
+
+
+Security / Encryption:
+
+    TLS 1.3
+
+
+Transport Layer:
+
+    TCP
+
+
+Network Layer:
+
+    IPv4 / IPv6
+
+
+Link Layer:
+
+    Ethernet / Wi-Fi / Virtual Network
+
+
+DNS:
+
+    Domain Name Resolution
+
+
+Simplified stack:
+
+    Application
+        |
+        | HTTP/2
+        v
+    TLS
+        |
+        v
+    TCP
+        |
+        v
+    IPv4
+        |
+        v
+    Ethernet / Wi-Fi
+        |
+        v
+    Physical Network
+
+
+===============================================================
+39. EXACT FAILURE POINT IN THIS OUTPUT
+===============================================================
+
+IPv6 failed:
+
+    Network is unreachable
+
+
+Why?
+
+    No usable IPv6 route/connectivity.
+
+
+But IPv4 succeeded.
+
+
+Therefore:
+
+    IPv6 connectivity = FAILED
+
+    IPv4 connectivity = SUCCESS
+
+
+Then:
+
+    TCP = SUCCESS
+
+    TLS = SUCCESS
+
+    Certificate verification = SUCCESS
+
+    HTTP/2 = SUCCESS
+
+    HTTP request = SUCCESS
+
+    HTTP response = SUCCESS
+
+
+So the overall request succeeded.
+
+
+===============================================================
+40. HOW TO DEBUG A CURL CONNECTION
+===============================================================
+
+If curl fails, think layer-by-layer.
+
+
+STEP 1 — DNS
+
+Check:
+
+    nslookup google.com
+
+or:
+
+    dig google.com
+
+Question:
+
+    Did the hostname resolve to an IP?
+
+
+If not:
+
+    DNS problem
+
+
+STEP 2 — ROUTING
+
+Check:
+
+    ip route
+
+For IPv6:
+
+    ip -6 route
+
+
+Question:
+
+    Does the machine have a route to the destination?
+
+
+STEP 3 — CONNECTIVITY
+
+Test:
+
+    ping google.com
+
+For IPv4:
+
+    ping -4 google.com
+
+For IPv6:
+
+    ping -6 google.com
+
+
+Note:
+
+Ping uses ICMP, not TCP 443, so ping failure does not always
+mean HTTPS will fail.
+
+
+STEP 4 — TCP PORT
+
+Test:
+
+    nc -vz google.com 443
+
+
+or:
+
+    telnet google.com 443
+
+
+Question:
+
+    Can I establish a TCP connection to port 443?
+
+
+STEP 5 — TLS
+
+Use:
+
+    curl -v https://google.com
+
+
+or:
+
+    openssl s_client -connect google.com:443 -servername google.com
+
+
+Question:
+
+    Is the TLS handshake succeeding?
+
+
+STEP 6 — HTTP
+
+Use:
+
+    curl -v https://google.com
+
+
+Question:
+
+    What HTTP status code did the server return?
+
+
+===============================================================
+41. IMPORTANT CURL COMMANDS
+===============================================================
+
+Basic request:
+
+    curl https://google.com
+
+
+Verbose:
+
+    curl -v https://google.com
+
+
+Follow redirects:
+
+    curl -L https://google.com
+
+
+Show headers:
+
+    curl -I https://google.com
+
+
+Verbose + follow redirects:
+
+    curl -vL https://google.com
+
+
+Use IPv4:
+
+    curl -4 https://google.com
+
+
+Use IPv6:
+
+    curl -6 https://google.com
+
+
+Show only response headers:
+
+    curl -I https://google.com
+
+
+Specify HTTP version if supported:
+
+    curl --http1.1 https://google.com
+
+    curl --http2 https://google.com
+
+    curl --http3 https://google.com
+
+
+===============================================================
+42. IMPORTANT INTERVIEW QUESTION
+===============================================================
+
+Question:
+
+    What happens when you run:
+
+        curl https://google.com
+
+
+Answer:
+
+    First, the system resolves google.com using DNS and gets
+    IPv4 and/or IPv6 addresses.
+
+    Curl tries IPv6 first in this case, but IPv6 fails because
+    there is no reachable IPv6 route.
+
+    Curl then falls back to IPv4 and connects to Google's
+    IPv4 address on TCP port 443.
+
+    TCP establishes the connection using the three-way handshake.
+
+    After TCP is established, TLS 1.3 negotiation takes place.
+
+    The server sends its certificate, and the client verifies
+    the certificate chain, trusted CA, validity, and hostname.
+
+    After successful TLS negotiation, ALPN negotiates HTTP/2.
+
+    Curl then sends an HTTP GET request for the "/" path.
+
+    Google responds with HTTP 301 and provides
+    https://www.google.com/ in the Location header.
+
+    If curl is run with -L, it follows the redirect automatically.
+
+
+===============================================================
+43. SHORT INTERVIEW VERSION
+===============================================================
+
+If the interviewer wants a short answer:
+
+    When I run curl https://google.com, DNS first resolves the
+    hostname to an IP address. Curl then establishes a TCP
+    connection to port 443. After that, TLS performs the secure
+    handshake and certificate verification. ALPN negotiates the
+    application protocol, which in this case is HTTP/2. Curl
+    sends an HTTP GET request, and the server returns an HTTP
+    response. In this example Google returns 301 and redirects
+    google.com to www.google.com.
+
+
+===============================================================
+44. ONE-LINE MENTAL MODEL
+===============================================================
+
+Remember:
+
+    URL
+     ↓
+    DNS
+     ↓
+    IP
+     ↓
+    Route
+     ↓
+    TCP
+     ↓
+    TLS
+     ↓
+    Certificate
+     ↓
+    ALPN
+     ↓
+    HTTP/2
+     ↓
+    HTTP Request
+     ↓
+    HTTP Response
+
+
+===============================================================
+45. YOUR EXACT CURL OUTPUT — FINAL INTERPRETATION
+===============================================================
+
+Line:
+
+    Host google.com:443 was resolved.
+
+Meaning:
+
+    DNS successfully resolved google.com.
+
+
+Line:
+
+    IPv6: 2404:6800:4002:81b::200e
+
+Meaning:
+
+    DNS provided an IPv6 address.
+
+
+Line:
+
+    IPv4: 142.250.182.206
+
+Meaning:
+
+    DNS provided an IPv4 address.
+
+
+Line:
+
+    Trying IPv6...
+
+Meaning:
+
+    Curl tries IPv6 first.
+
+
+Line:
+
+    Network is unreachable
+
+Meaning:
+
+    No usable IPv6 network route.
+
+
+Line:
+
+    Trying 142.250.182.206:443...
+
+Meaning:
+
+    Curl falls back to IPv4.
+
+
+Line:
+
+    TLSv1.3 Client hello
+
+Meaning:
+
+    TLS handshake begins.
+
+
+Line:
+
+    Server hello
+
+Meaning:
+
+    Server responds with TLS parameters.
+
+
+Line:
+
+    Certificate
+
+Meaning:
+
+    Server sends its certificate.
+
+
+Line:
+
+    subject: CN=*.google.com
+
+Meaning:
+
+    Certificate belongs to Google's domain/wildcard.
+
+
+Line:
+
+    SSL certificate verified via OpenSSL.
+
+Meaning:
+
+    Certificate verification succeeded.
+
+
+Line:
+
+    SSL connection using TLSv1.3
+
+Meaning:
+
+    Secure TLS connection established.
+
+
+Line:
+
+    ALPN: server accepted h2
+
+Meaning:
+
+    HTTP/2 was selected.
+
+
+Line:
+
+    OPENED stream
+
+Meaning:
+
+    HTTP/2 stream was created.
+
+
+Line:
+
+    GET /
+
+Meaning:
+
+    Client requests the root resource.
+
+
+Line:
+
+    HTTP/2 301
+
+Meaning:
+
+    Server permanently redirects the URL.
+
+
+Line:
+
+    location: https://www.google.com/
+
+Meaning:
+
+    New URL is www.google.com.
+
+
+Line:
+
+    Connection left intact
+
+Meaning:
+
+    Connection remains available for reuse.
+
+
+===============================================================
+46. FINAL BIG-PICTURE DIAGRAM
+===============================================================
+
+                     USER COMMAND
+                           |
+                           v
+                curl -v https://google.com
+                           |
+                           v
+                    +-------------+
+                    |     DNS     |
+                    +-------------+
+                           |
+               +-----------+-----------+
+               |                       |
+               v                       v
+             IPv6                    IPv4
+               |                       |
+               X                       |
+       Network unreachable              |
+                                       v
+                              142.250.182.206
+                                       |
+                                       v
+                              TCP PORT 443
+                                       |
+                              TCP 3-WAY HANDSHAKE
+                                       |
+                                       v
+                                  TLS 1.3
+                                       |
+                              ClientHello
+                                       |
+                              ServerHello
+                                       |
+                                Certificate
+                                       |
+                           Certificate Verification
+                                       |
+                                TLS Established
+                                       |
+                                       v
+                              ALPN Negotiation
+                                       |
+                                       v
+                                  HTTP/2
+                                       |
+                                       v
+                                  GET /
+                                       |
+                                       v
+                                  Google
+                                       |
+                                       v
+                               HTTP/2 301
+                                       |
+                                       v
+                    Location: https://www.google.com/
+                                       |
+                                       v
+                                REDIRECTION
+
+
+===============================================================
+47. MOST IMPORTANT DEVOPS LEARNING
+===============================================================
+
+Do not memorize curl output line-by-line.
+
+Understand the layers.
+
+When a connection fails, ask:
+
+    1. Did DNS resolve?
+           |
+           v
+    2. Do I have a route?
+           |
+           v
+    3. Can I establish TCP?
+           |
+           v
+    4. Can TLS handshake complete?
+           |
+           v
+    5. Is the certificate trusted?
+           |
+           v
+    6. Does hostname match?
+           |
+           v
+    7. Which HTTP version was negotiated?
+           |
+           v
+    8. What HTTP status code did the server return?
+
+
+This approach is much more useful in Linux, DevOps,
+Cloud, Kubernetes, networking, and production troubleshooting
+than simply memorizing commands.
+
+
+===============================================================
+END
+===============================================================

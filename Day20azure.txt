@@ -1,0 +1,32 @@
+================================================================================
+                      AZURE CLOUD ADMINISTRATION NOTES
+               MODULE 6: AZURE ACCOUNT, SUBSCRIPTION & BILLING
+================================================================================
+
+1. HIERARCHY SUMMARY
+--------------------------------------------------------------------------------
+Management Group  -> Central Governance (Policies, RBAC across multiple subscriptions)
+Subscription      -> Billing Boundary & Quota Container (Generates individual invoice)
+Resource Group    -> Lifecycle & Deployment Boundary (Cascading deletion)
+Resource          -> Actual Cloud Service (VM, Storage, Database, VNet)
+
+
+2. SUBSCRIPTION TYPES AT A GLANCE
+--------------------------------------------------------------------------------
+- Free Trial      : $200 USD (₹15,800 INR) credit for 30 days + 12 mo popular free + Always free.
+- Pay-As-You-Go   : Consumption-based monthly billing (No upfront commitment).
+- Student         : $100 USD credit/year, no credit card required.
+- Enterprise (EA) : Multi-year enterprise financial commitment with enterprise discounts.
+- CSP             : Managed & billed via certified Microsoft Cloud Solution Provider partner.
+
+
+3. ESSENTIAL COST OPTIMIZATION RULES
+--------------------------------------------------------------------------------
+1. VMs must be in `Stopped (Deallocated)` state to stop compute billing.
+2. Delete orphaned Managed Disks and Public IPs after destroying VMs.
+3. Configure Budgets & Alerts at 50%, 80%, and 100% thresholds.
+4. Apply Resource Group lifecycle boundaries to tear down dev/test setups cleanly.
+5. Use Azure Advisor Cost recommendations for right-sizing resources.
+================================================================================
+                                END OF NOTES
+================================================================================

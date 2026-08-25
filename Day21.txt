@@ -1,0 +1,697 @@
+AZURE RESOURCE MANAGER (ARM), RBAC, POLICY, TAGS & LOCKS
+========================================================
+
+1. AZURE RESOURCE MANAGER (ARM)
+-------------------------------
+
+Azure Resource Manager, or ARM, is the management and deployment layer of
+Microsoft Azure.
+
+Whenever we want to create, update, delete, or manage Azure resources, we can
+use different interfaces such as:
+
+- Azure Portal (GUI)
+- Azure CLI
+- PowerShell
+- REST API
+- ARM Templates
+- Bicep
+
+Conceptual flow:
+
+User / Administrator
+        |
+        v
+Portal / CLI / PowerShell / REST API / Bicep
+        |
+        v
+Azure Resource Manager (ARM)
+        |
+        v
+Azure Resource Provider
+        |
+        v
+Actual Azure Resource
+
+
+Example: Creating a Virtual Machine
+
+User
+  |
+  | Create VM
+  v
+Azure Portal / CLI
+  |
+  v
+ARM
+  |
+  v
+Microsoft.Compute (Resource Provider)
+  |
+  v
+Azure Virtual Machine
+
+
+ARM provides a consistent management layer regardless of which interface is
+used to interact with Azure.
+
+Important:
+
+ARM itself does not directly represent the physical VM, Storage Account, or
+network. ARM processes the management request and communicates with the
+appropriate Resource Provider.
+
+Examples of Resource Providers:
+
+VM              -> Microsoft.Compute
+Virtual Network -> Microsoft.Network
+Storage Account -> Microsoft.Storage
+
+
+ARM TEMPLATE
+============
+
+ARM Templates are used for Infrastructure as Code (IaC).
+
+An ARM Template is generally a JSON file where we declaratively define the
+Azure infrastructure that we want to deploy.
+
+Instead of manually creating resources one by one:
+
+1. Create VNet
+2. Create Subnet
+3. Create VM
+4. Create Storage Account
+
+We can define the desired infrastructure in a template and deploy it through
+ARM.
+
+Important:
+
+ARM = Management and deployment layer
+
+ARM Template = A way to define infrastructure that ARM can deploy
+
+
+Main ARM Template Components:
+
+1. Parameters
+2. Variables
+3. Resources
+4. Outputs
+
+
+1. PARAMETERS
+-------------
+
+Parameters are input values provided during deployment.
+
+Examples:
+
+Resource Name = MilanVM
+Location      = Central India
+VM Size       = Standard_B2s
+
+The same template can be reused for different environments by changing the
+parameter values.
+
+Example:
+
+Development:
+VM Size = Small
+
+Production:
+VM Size = Large
+
+
+2. VARIABLES
+------------
+
+Variables store reusable or calculated values.
+
+Example:
+
+Environment = Production
+
+They help avoid repeating the same values multiple times.
+
+
+3. RESOURCES
+------------
+
+The resources section defines the actual Azure resources that we want to
+deploy.
+
+Examples:
+
+- Virtual Machine
+- Virtual Network
+- Storage Account
+- Network Security Group
+
+
+Example infrastructure:
+
+Application
+    |
+    +-- Virtual Machine
+    +-- Virtual Network
+    +-- Storage Account
+    +-- NSG
+
+
+4. OUTPUTS
+----------
+
+Outputs return useful information after the deployment.
+
+Examples:
+
+- VM Public IP Address
+- Storage Account Name
+- Application Endpoint
+
+
+BICEP
+=====
+
+Bicep is a simpler and more readable language for defining Azure
+infrastructure.
+
+Instead of writing complex JSON syntax directly, we can use Bicep.
+
+Conceptually:
+
+                 Azure Resource Manager
+                         ^
+                         |
+              Deploy infrastructure through ARM
+                         |
+              +----------+----------+
+              |                     |
+        ARM Template              Bicep
+           JSON               Simpler Syntax
+
+
+Important:
+
+Bicep is not a replacement for ARM.
+
+ARM is the management and deployment engine.
+
+Bicep is a simpler way to define infrastructure that is deployed through ARM.
+
+
+RBAC - ROLE-BASED ACCESS CONTROL
+================================
+
+RBAC controls:
+
+WHO can do WHAT on WHICH Azure resource or scope.
+
+
+Example:
+
+Production Resource Group
+
+Production-RG
+    |
+    +-- VM
+    +-- Database
+    +-- Storage Account
+
+
+Users:
+
+Milan -> Developer
+Aman  -> DevOps Engineer
+Rahul -> Intern
+
+
+RBAC roles:
+
+Milan
+Role: Reader
+
+Can:
+- View resources
+
+Cannot:
+- Create resources
+- Modify resources
+- Delete resources
+
+
+Aman
+Role: Contributor
+
+Can generally:
+- Create resources
+- Modify resources
+- Delete resources
+
+
+Simple memory:
+
+RBAC = WHO can do WHAT
+
+
+Example:
+
+Milan
+  |
+  v
+RBAC: Reader
+  |
+  v
+Production Resource Group
+  |
+  +-- View VM       -> Allowed
+  +-- View Storage  -> Allowed
+  +-- Delete VM     -> Not Allowed
+
+
+AZURE POLICY
+============
+
+Azure Policy is used to enforce organizational rules and standards.
+
+RBAC answers:
+
+"Does the user have permission to perform this action?"
+
+Policy answers:
+
+"Is this configuration allowed according to company rules?"
+
+
+Example:
+
+Aman has Contributor access.
+
+Therefore, Aman has permission to create a VM.
+
+But the company has a policy:
+
+Resources can only be created in:
+
+- Central India
+- South India
+
+
+Aman tries:
+
+Create VM
+Region = East US
+
+
+Flow:
+
+Aman
+  |
+  v
+RBAC Check
+  |
+  +-- Does Aman have permission to create VM?
+  |
+  +-- YES
+         |
+         v
+Policy Check
+  |
+  +-- Is East US an allowed region?
+  |
+  +-- NO
+         |
+         v
+Request Denied
+
+
+Important:
+
+Even if RBAC allows an action, Azure Policy can restrict the configuration
+based on organizational rules.
+
+
+Examples of Azure Policy:
+
+- Resources can only be deployed in approved regions.
+- Only specific VM sizes can be used.
+- Resources must have required tags.
+- Storage accounts must follow security requirements.
+
+
+Simple memory:
+
+RBAC   = WHO can perform an action?
+Policy = WHAT is allowed or required?
+
+
+TAGS
+====
+
+Tags are key-value pairs used to organize and categorize Azure resources.
+
+Example:
+
+Environment = Production
+Project     = E-Commerce
+Department  = Engineering
+Owner       = Milan
+
+
+Suppose an organization has hundreds or thousands of resources:
+
+- VMs
+- Databases
+- Storage Accounts
+- VNets
+- App Services
+
+Without tags, it can be difficult to identify:
+
+- Which project owns the resource?
+- Is it Production or Development?
+- Which department is responsible?
+- Who owns the resource?
+- Which team should be charged for the cost?
+
+
+Example:
+
+VM-01
+
+Environment = Production
+Project     = E-Commerce
+Department  = Engineering
+
+
+Storage-01
+
+Environment = Development
+Project     = TestingApp
+Department  = QA
+
+
+Uses of Tags:
+
+- Resource organization
+- Resource filtering
+- Cost management and cost allocation
+- Ownership identification
+- Automation
+- Environment identification
+
+
+Simple memory:
+
+Tags = WHAT is this resource related to?
+
+
+RESOURCE LOCKS
+==============
+
+Azure Resource Locks are used to protect existing resources from accidental
+deletion or modification.
+
+Example:
+
+Production-RG
+    |
+    +-- Production VM
+    +-- Production Database
+    +-- Production Storage
+
+
+Suppose a DevOps Engineer has the Contributor role.
+
+The user may have permission to delete a resource through RBAC.
+
+But the company wants to prevent accidental deletion of the Production
+Database.
+
+A Resource Lock can be applied.
+
+
+Example:
+
+DevOps Engineer
+Role: Contributor
+        |
+        v
+Has permission to delete VM? -> YES
+        |
+        v
+VM has CanNotDelete Lock
+        |
+        v
+Delete Request -> BLOCKED
+
+
+Important:
+
+RBAC controls permission.
+
+Resource Lock provides additional protection for an existing resource.
+
+
+TYPES OF RESOURCE LOCKS
+=======================
+
+1. CanNotDelete
+----------------
+
+Prevents deletion of the resource.
+
+Allowed:
+
+- Read
+- Permitted modifications
+
+Not allowed:
+
+- Delete
+
+
+Example:
+
+Production Database
+
+Lock = CanNotDelete
+
+Modify configuration -> Allowed
+Delete database      -> Blocked
+
+
+2. ReadOnly
+-----------
+
+Prevents management-plane modifications.
+
+Allowed:
+
+- Read resource
+
+Blocked:
+
+- Modify resource
+- Delete resource
+
+
+Example:
+
+Production Storage Account
+
+Lock = ReadOnly
+
+View configuration   -> Allowed
+Modify configuration -> Blocked
+Delete resource      -> Blocked
+
+
+Simple comparison:
+
+CanNotDelete:
+
+Read     -> Allowed
+Modify   -> Generally allowed if permissions allow
+Delete   -> Blocked
+
+
+ReadOnly:
+
+Read     -> Allowed
+Modify   -> Blocked
+Delete   -> Blocked
+
+
+LOCK INHERITANCE
+================
+
+Locks can be applied at higher scopes.
+
+Conceptually:
+
+Subscription
+      |
+      v
+Resource Group
+      |
+      v
+Resources
+
+
+Example:
+
+Production-RG
+      |
+      | CanNotDelete Lock
+      |
+      +-- VM
+      +-- Database
+      +-- Storage
+
+
+A lock applied at a higher scope can affect child resources under that scope.
+
+
+COMPLETE EXAMPLE
+================
+
+Milan wants to create a VM.
+
+Step 1: Request
+
+Milan
+  |
+  v
+Azure Portal / CLI
+  |
+  v
+ARM
+
+
+Step 2: RBAC
+
+ARM checks:
+
+"Does Milan have permission to create a VM?"
+
+If NO:
+Request denied.
+
+If YES:
+Continue.
+
+
+Step 3: Azure Policy
+
+Policy checks:
+
+"Is this VM configuration allowed according to company rules?"
+
+Example:
+
+Only approved regions:
+
+- Central India
+- South India
+
+
+If Milan selects:
+
+East US
+
+Policy can deny the deployment.
+
+
+Step 4: Resource Creation
+
+If permission and policy checks are successful:
+
+ARM
+  |
+  v
+Microsoft.Compute
+  |
+  v
+Virtual Machine created
+
+
+Step 5: Tags
+
+Tags can be attached:
+
+Environment = Production
+Project     = E-Commerce
+Department  = Engineering
+
+
+Step 6: Resource Lock
+
+After the Production VM is created:
+
+CanNotDelete Lock
+
+Now, even if a user has sufficient permission, an accidental delete operation can
+be blocked by the lock.
+
+
+FINAL CONCEPTUAL FLOW
+=====================
+
+User
+ |
+ | Portal / CLI / PowerShell / REST API / Bicep
+ v
+AZURE RESOURCE MANAGER
+ |
+ +---------------------------------------+
+ |                                       |
+ v                                       v
+RBAC                                  Policy
+WHO can do WHAT?                      WHAT is allowed?
+ |
+ +-------------------+-------------------+
+                     |
+                     v
+             Resource Provider
+                     |
+                     v
+              Azure Resource
+                     |
+          +----------+----------+
+          |                     |
+          v                     v
+         Tags                  Locks
+   Organization            Protection
+   Identification          Prevent accidental
+   Cost Tracking           changes/deletion
+
+
+FINAL MEMORY TRICK
+==================
+
+ARM
+= How Azure resources are managed and deployed
+
+Resource Provider
+= Service-specific provider that handles the resource type
+
+RBAC
+= WHO can do WHAT?
+
+Azure Policy
+= WHAT is allowed or required?
+
+Tags
+= WHAT is this resource related to?
+
+Resource Lock
+= Protect the resource from accidental deletion or modification
+
+ARM Template
+= JSON-based Infrastructure as Code definition
+
+Bicep
+= Simpler syntax for defining Azure infrastructure and deploying it through ARM

@@ -1,0 +1,732 @@
+Phase-6
+ps *
+top *
+htop *
+pstree *
+pgrep *
+kill.    }*
+killall. }*
+pkill.   }*
+jobs.   *
+bg.   *
+fg    *
+nohup  
+disown. 
+nice *
+renice. *
+ Debugging and tracing processes:
+            strace
+            lsof`
+            nohup
+- Scheduling tasks:
+            cron
+            at
+            systemd timers
+- Performance monitoring:
+            vmstat
+            iostat
+
+            sar
+            netstat
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+                 TOPIC: THE 'pstree' (PROCESS TREE) COMMAND
+================================================================================
+
+1. OVERVIEW & CORE CONCEPT
+--------------------------------------------------------------------------------
+Command Name : pstree (Process Tree)
+Purpose      : Displays running processes on the system as a visual tree 
+               hierarchy using ASCII/UTF-8 box-drawing characters.
+Key Property : Unlike `ps -ef`, which lists processes as a flat list with PPIDs, 
+               `pstree` graphically represents the parent-child relationships 
+               starting from root process (PID 1: systemd/init).
+
+Primary Uses :
+- Visually inspecting process ownership and lineage.
+- Identifying which master process spawned runaway worker processes.
+- Understanding how multi-threaded or multi-process services (like Apache, 
+  Nginx, or SSH) structure their child processes.
+- Tracing orphan or zombie processes back to their parent.
+
+
+2. INSTALLATION
+--------------------------------------------------------------------------------
+The `pstree` tool is part of the `psmisc` utility package. If missing on 
+minimal Linux installations, install it via:
+
+Ubuntu/Debian : sudo apt update && sudo apt install psmisc
+RHEL/Rocky    : sudo dnf install psmisc
+Arch Linux    : sudo pacman -S psmisc
+
+
+3. COMMAND-LINE FLAGS REFERENCE
+--------------------------------------------------------------------------------
+SYNTAX:
+  pstree [options] [PID | USER]
+
+--------------------------------------------------------------------------------
+Flag      Full Option       Description & Use Case
+--------------------------------------------------------------------------------
+-p        --show-pids       Displays Process IDs (PIDs) alongside process names.
+                            Essential for identifying target PIDs to kill.
+
+-u        --show-parents    Displays user name transitions whenever a child 
+                            process runs under a different user than its parent.
+
+-a        --arguments       Displays full command-line arguments passed to 
+                            each process execution.
+
+-c        --compact-not     Disables compacting of identical child process 
+                            branches (shows every process explicitly).
+
+-h        --highlight-all   Highlights the current process and its ancestors.
+
+-H <PID>  --highlight-pid   Highlights a specific PID and its parent hierarchy.
+
+-n        --numeric-sort    Sorts process branches numerically by PID instead of 
+                            alphabetically by process name.
+
+-t        --thread-names    Shows full names of threads where available.
+
+-T        --hide-threads    Hides lightweight threads, showing only actual 
+                            processes (cleaner high-level view).
+
+
+4. SAMPLE OUTPUT BREAKDOWN & DEMONSTRATIONS
+--------------------------------------------------------------------------------
+Command: pstree -p
+
+Sample Output:
+systemd(1)─┬─systemd-journal(342)
+           ├─sshd(890)───sshd(2314)───bash(2320)───pstree(4120)
+           ├─nginx(1120)─┬─nginx(1121)
+           │             └─nginx(1122)
+           └─dbus-daemon(450)
+
+Diagram Breakdown:
+1. systemd(1)       : The root parent process (PID 1) at the top of the tree.
+2. sshd(890)        : The SSH daemon master process.
+3. └─sshd(2314)     : An active SSH connection session spawned by master sshd.
+4.    └─bash(2320)  : The user's interactive shell inside that SSH session.
+5.       └─pstree   : The `pstree` command itself running inside bash!
+
+Note on Brackets `{#}`:
+If multiple identical child processes are running, `pstree` compacts them like 
+`nginx(1120)───2*[nginx]` unless `-c` is passed.
+
+
+5. REAL-WORLD COMMAND EXAMPLES & CHEAT SHEET
+--------------------------------------------------------------------------------
+# Example 1: Show process tree with Process IDs (PIDs)
+pstree -p
+
+# Example 2: Show process tree with full command arguments and PIDs
+pstree -pa
+
+# Example 3: View tree for processes owned by a specific user (e.g., 'milan')
+pstree milan
+
+# Example 4: View tree rooted at a specific process ID (e.g., PID 890 for sshd)
+pstree -p 890
+
+# Example 5: Show tree hiding lightweight threads for a cleaner process view
+pstree -pT
+
+# Example 6: Highlight a specific process and its parent chain (e.g., PID 2320)
+pstree -p -H 2320
+
+================================================================================
+                                END OF NOTES
+================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+                      TOPIC: THE 'pgrep' (PROCESS GREP) COMMAND
+================================================================================
+
+1. OVERVIEW & CORE CONCEPT
+--------------------------------------------------------------------------------
+Command Name : pgrep (Process Grep)
+Purpose      : Searches active running processes on the system and looks up 
+               their Process IDs (PIDs) based on a matching name or criteria.
+Key Advantage: Replaces complex pipe chains like `ps aux | grep pattern` with a 
+               single, cleaner, and faster command. 
+
+Why use 'pgrep' instead of 'ps aux | grep'?
+- 'ps aux | grep name' often matches the 'grep' process itself in the results.
+- 'pgrep' automatically ignores its own process execution from search results.
+- 'pgrep' integrates directly with 'pkill' for targeted process termination.
+
+
+2. COMMAND-LINE FLAGS REFERENCE
+--------------------------------------------------------------------------------
+SYNTAX:
+  pgrep [options] <pattern>
+
+--------------------------------------------------------------------------------
+Flag          Full Option      Description & Use Case
+--------------------------------------------------------------------------------
+-l            --list-name      Lists the process name alongside the matching PID.
+
+-a            --list-full      Lists the full command line and arguments alongside 
+                               the matching PID. (Extremely useful for scripts!).
+
+-u <user>     --user           Matches processes owned by effective User ID or 
+                               username (e.g., pgrep -u milan).
+
+-U <user>     --real-user      Matches processes owned by real User ID or username.
+
+-f            --full           Matches the pattern against the FULL command line and 
+                               arguments (default only matches process binary name).
+
+-x            --exact          Requires an EXACT match for the process name, 
+                               preventing partial substring matching.
+
+-n            --newest         Selects only the NEWEST (most recently started) 
+                               matching process.
+
+-o            --oldest         Selects only the OLDEST (first started) matching 
+                               process.
+
+-c            --count          Suppresses PID output and prints ONLY the total 
+                               count of matching processes.
+
+-P <PPID>     --parent         Matches processes that have the specified Parent 
+                               Process ID (PPID).
+
+-d <delimiter>                 Sets a custom output delimiter (e.g., pgrep -d, 
+                               outputs PIDs separated by commas).
+
+
+3. DEMO EXAMPLES & COMPARISON CHEATSHEET
+--------------------------------------------------------------------------------
+
+[THE OLD/TRADITIONAL WAY (CLUTTERED)]
+$ ps aux | grep master.sh
+milan     7120  0.0  0.1  22450  8900 pts/0    S+   10:15  0:00 /bin/bash ./master.sh
+milan     7125  0.0  0.0  15820  2100 pts/0    S+   10:15  0:00 grep --color=auto master.sh
+
+[THE 'pgrep' WAY (CLEAN & DIRECT)]
+$ pgrep -fl master.sh
+7120 /bin/bash ./master.sh
+
+
+4. REAL-WORLD PRACTICAL SCENARIOS
+--------------------------------------------------------------------------------
+# Scenario 1: Find all PIDs running 'nginx' separated by commas
+pgrep -d, nginx
+
+# Scenario 2: Find all processes owned by user 'milan' with full command lines
+pgrep -u milan -a
+
+# Scenario 3: Check if a service script is running (returns total count)
+pgrep -c -f "python3 server.py"
+
+# Scenario 4: Get ONLY the newest instance of a running process
+pgrep -n -a sleep
+
+# Scenario 5: Find all child processes spawned by a specific Parent PID (e.g., PID 4260)
+pgrep -P 4260 -a
+
+# Scenario 6: Match exact process name only (prevents matching 'sleep' with 'sleeping_app')
+pgrep -x sleep
+
+================================================================================
+                                END OF NOTES
+================================================================================
+
+
+
+
+
+
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+               TOPIC: PROCESS SIGNALS & TERMINATION COMMANDS
+================================================================================
+
+1. OVERVIEW & CORE CONCEPT
+--------------------------------------------------------------------------------
+Key Concept  : In Linux, you do not directly "delete" or "shut down" a process. 
+               Instead, you send it an asynchronous IPC (Inter-Process 
+               Communication) notification called a SIGNAL.
+Kernel Role  : The Linux kernel delivers the signal to the process, which then 
+               executes a designated signal-handler function (save state, 
+               reload config, or immediately terminate).
+
+Key Tools Covered:
+- kill    : Sends a specific signal to a process by its PID.
+- killall : Sends a signal to ALL processes matching an exact binary name.
+- pkill   : Sends a signal to processes based on flexible pattern matching 
+            (names, user owners, terminals).
+
+
+2. THE 5 ESSENTIAL LINUX SIGNALS YOU MUST KNOW
+--------------------------------------------------------------------------------
+While Linux defines over 30 signals (listable via `kill -l`), system 
+administrators rely on these 5 key signals daily:
+
+Signal #  Signal Name  Key Behavior & Description
+--------------------------------------------------------------------------------
+1         SIGHUP       Hangup / Reload Configuration.
+                       Instructs daemons (e.g., Nginx, Apache) to reload their 
+                       configuration files without restarting or dropping connections.
+
+2         SIGINT       Terminal Interrupt.
+                       Sent directly by pressing `Ctrl + C` in a terminal.
+                       Asks the foreground process to cancel its current operation.
+
+9         SIGKILL      Force Kill (Kernel Override).
+                       IMMEDIATELY stops and destroys the process. 
+                       - CANNOT be trapped, blocked, or ignored by application code.
+                       - Process cannot perform clean-up or save state.
+                       - USE AS A LAST RESORT ONLY!
+
+15        SIGTERM      Graceful Termination (Default Signal).
+                       The default signal sent if no signal number is specified.
+                       Asks the application to clean up memory, close file 
+                       descriptors, save current state, and exit gracefully.
+
+18 / 19   SIGCONT/     SIGSTOP (19) pauses process execution (like `Ctrl + Z`).
+          SIGSTOP      SIGCONT (18) resumes execution of a stopped process.
+
+
+3. COMMAND 1: THE 'kill' COMMAND (BY PID)
+--------------------------------------------------------------------------------
+Purpose: Sends a signal to one or more specific processes using their PIDs.
+
+SYNTAX:
+  kill [-signal] <PID>
+
+DEMO EXAMPLES:
+--------------------------------------------------------------------------------
+# Demo 1: Gracefully terminate a process (Sends default SIGTERM / 15)
+kill 4120
+
+# Demo 2: Forcefully kill a frozen or stuck process (Sends SIGKILL / 9)
+kill -9 4120
+kill -SIGKILL 4120
+
+# Demo 3: Reload web server configuration without restarting (Sends SIGHUP / 1)
+kill -1 1042
+kill -HUP 1042
+
+# Demo 4: Send SIGTERM to multiple PIDs simultaneously
+kill 1042 1050 1066
+
+
+4. COMMAND 2: THE 'killall' COMMAND (BY EXACT NAME)
+--------------------------------------------------------------------------------
+Purpose: Kills ALL running instances of a process that match an EXACT binary name.
+
+SYNTAX:
+  killall [-signal] [options] <process_name>
+
+DEMO EXAMPLES:
+--------------------------------------------------------------------------------
+# Demo 1: Gracefully terminate all running instances of Nginx
+killall nginx
+
+# Demo 2: Force kill all Firefox instances immediately
+killall -9 firefox
+
+# Demo 3: Interactive mode (Prompts for confirmation before killing each process)
+killall -i python3
+
+# Demo 4: Kill only processes owned by a specific user matching the name
+killall -u milan sleep
+
+# Demo 5: Kill processes older than a specified duration (e.g., running > 2 hours)
+killall -o 2h process_name
+
+
+5. COMMAND 3: THE 'pkill' COMMAND (PATTERN & METADATA MATCHING)
+--------------------------------------------------------------------------------
+Purpose: Advanced process termination tool using regex patterns and metadata 
+         (user, parent PID, terminal).
+
+SYNTAX:
+  pkill [-signal] [options] <pattern>
+
+--------------------------------------------------------------------------------
+Flag          Description & Use Case
+--------------------------------------------------------------------------------
+-u <user>     Kills processes owned by a specific effective username or UID.
+-f            Matches the pattern against the FULL command line and arguments.
+-t <tty>      Kills processes attached to a specific terminal session (e.g., pts/1).
+-P <PPID>     Kills all child processes owned by a specific Parent PID.
+-n / -o       Kills only the Newest (-n) or Oldest (-o) matching process.
+
+DEMO EXAMPLES:
+--------------------------------------------------------------------------------
+# Demo 1: Kill all processes whose command line contains "server.py"
+pkill -f "python3 server.py"
+
+# Demo 2: Force kill all processes owned by user 'milan'
+pkill -9 -u milan
+
+# Demo 3: Kick off/terminate a specific logged-in user session on terminal pts/2
+pkill -t pts/2
+
+# Demo 4: Force kill only the newest matching instance of a script
+pkill -9 -n -f "backup.sh"
+
+
+6. REAL-WORLD TROUBLESHOOTING BEST PRACTICES
+--------------------------------------------------------------------------------
+1. The Escalation Order Rule:
+   Always attempt `kill <PID>` (SIGTERM 15) first. Give the application 10–30 
+   seconds to safely save data and exit. Only use `kill -9 <PID>` (SIGKILL) if 
+   the process remains frozen.
+
+2. Beware of Uninterruptible Sleep (`D` State):
+   Processes stuck in state `D` in `ps` output are waiting on kernel/hardware 
+   disk I/O. They CANNOT respond to `kill -9` until the underlying hardware 
+   or NFS mount responds!
+
+3. Preview Before You Kill (`pgrep` dry run):
+   Before running a destructive command like `pkill -f pattern`, run 
+   `pgrep -fl pattern` first to preview which PIDs you are about to terminate!
+
+================================================================================
+                                END OF NOTES
+================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+               TOPIC: JOB CONTROL & PROCESS PERSISTENCE (nohup/bg/fg)
+================================================================================
+
+1. OVERVIEW & CORE CONCEPTS
+--------------------------------------------------------------------------------
+Key Concept 1 : Job Control allows you to run, pause, resume, and manage 
+               multiple tasks (jobs) within a single terminal session.
+Key Concept 2 : Every command launched from a terminal is attached to that 
+               terminal's controlling process (TTY).
+Key Concept 3 : Signals like SIGHUP (Signal Hangup / 1) are sent to all shell 
+               child processes when a terminal window or SSH connection closes, 
+               terminating them unless specifically protected.
+
+Key Difference Between Jobs and Processes:
+- Process (PID): Global system-wide entity recognized across the entire OS.
+- Job (%job_id): Local task number managed strictly by your current shell session.
+
+
+2. TERMINAL KEYBOARD SHORTCUTS FOR JOB CONTROL
+--------------------------------------------------------------------------------
+Shortcut      Signal Sent    Action & Effect
+--------------------------------------------------------------------------------
+Ctrl + C      SIGINT (2)     Interrupts and IMMEDIATELY TERMINATES the 
+                             foreground process.
+
+Ctrl + Z      SIGTSTP (20)   PAUSES / SUSPENDS the foreground process and 
+                             moves it to the background in a "Stopped" state.
+                             (Frees up command prompt without killing process).
+
+
+3. COMMANDS REFERENCE: JOBS, FG, AND BG
+--------------------------------------------------------------------------------
+
+[THE '&' OPERATOR - DIRECT BACKGROUND EXECUTION]
+Appending `&` to any command runs it directly in the background without 
+blocking your terminal shell prompt.
+
+Example:
+$ sleep 300 &
+[1] 8420       <-- [Job ID] Process ID (PID)
+
+
+[THE 'jobs' COMMAND - LISTING SHELL JOBS]
+Lists all jobs currently managed by your current terminal session.
+
+Flags:
+-l : Displays Process IDs (PIDs) alongside Job IDs.
+-r : Displays only Running jobs.
+-s : Displays only Stopped (suspended) jobs.
+
+Sample Output of `jobs -l`:
+[1]-  8420 Running         sleep 300 &
+[2]+  8510 Stopped         python3 sync_data.py
+
+Understanding Indicators:
+`+` : The "current" default job (target for fg/bg if no job number specified).
+`-` : The "previous" default job.
+
+
+[THE 'fg' COMMAND - BRING TO FOREGROUND]
+Moves a background or suspended job into the active foreground of your terminal.
+
+Syntax:
+  fg %<job_id>
+
+Examples:
+$ fg %1        <-- Brings Job #1 to foreground
+$ fg           <-- Brings default job (+) to foreground
+
+
+[THE 'bg' COMMAND - RESUME IN BACKGROUND]
+Resumes a suspended/stopped job (e.g., after Ctrl+Z) in the background.
+
+Syntax:
+  bg %<job_id>
+
+Examples:
+$ bg %2        <-- Resumes stopped Job #2 in the background
+$ bg           <-- Resumes default stopped job (+) in the background
+
+
+4. RUNNING PERSISTENT PROCESSES WITH 'nohup' AND 'disown'
+--------------------------------------------------------------------------------
+
+[THE 'nohup' COMMAND (NO HANGUP)]
+Problem  : Closing an SSH session sends SIGHUP to all child processes, killing them.
+Solution : `nohup` intercepts/ignores SIGHUP so the command keeps executing on 
+           the server even after you log out.
+
+Standard Output Behavior:
+Since standard terminal output (stdout/stderr) is disconnected upon logout, 
+`nohup` automatically redirects all stdout and stderr into a file named 
+`nohup.out` (or `~/nohup.out`).
+
+Syntax:
+  nohup <command> [arguments] &
+
+Example:
+$ nohup python3 -u long_indexer.py > indexer.log 2>&1 &
+[1] 9120
+
+
+[THE 'disown' COMMAND (DETACH FROM SHELL)]
+What if you started a process WITHOUT `nohup`, and now need to disconnect SSH?
+`disown` removes a running background job from the current shell's job table, 
+preventing SIGHUP from being sent to it when the terminal closes.
+
+Workflow:
+1. Start long command : $ python3 backup.py
+2. Suspend it        : Press `Ctrl + Z`
+3. Send to background: $ bg
+4. Detach from shell : $ disown %1  (or disown -h %1 to keep in table but ignore SIGHUP)
+5. Safe to exit SSH  : $ exit
+
+
+5. REAL-WORLD PRACTICAL SCENARIOS & WORKFLOWS
+--------------------------------------------------------------------------------
+
+SCENARIO A: UNBLOCKING YOUR TERMINAL WITHOUT CANCELING WORK
+--------------------------------------------------------------------------------
+You accidentally launched a 50GB file compression in foreground without `&`:
+
+$ tar -czvf web_archive.tar.gz /var/www/html/
+# (Terminal freezes and starts printing thousands of files...)
+
+Fix Step-by-Step:
+1. Press `Ctrl + Z`                --> Suspends compression.
+2. Type `bg`                       --> Resumes compression in background.
+3. Type `jobs -l`                  --> Confirm it reads "Running".
+4. You can now use terminal freely while compression runs!
+
+
+SCENARIO B: OVERNIGHT DATABASE MIGRATION OVER SSH
+--------------------------------------------------------------------------------
+You need to run a 6-hour database migration over SSH, but your internet at home 
+might disconnect.
+
+Command Solution:
+$ nohup php artisan migrate --force > migration.log 2>&1 &
+
+Verification Steps:
+1. Check process is alive    : $ pgrep -fl migrate
+2. Follow log output in real-time : $ tail -f migration.log
+3. Exit SSH safely           : $ exit
+   (Log back in 6 hours later and inspect `migration.log`).
+
+
+6. COMPARISON SUMMARY CHEATSHEET
+--------------------------------------------------------------------------------
+Command / Tool     Ignores SIGHUP?     Frees Terminal?     Interactive?
+--------------------------------------------------------------------------------
+command            NO                  NO                  YES
+command &          NO                  YES                 YES (Terminal bound)
+nohup command &    YES                 YES                 NO (Detached output)
+disown %1          YES                 YES                 NO (Detached from shell)
+================================================================================
+                                END OF NOTES
+================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+               TOPIC: PROCESS PRIORITIES ('nice' AND 'renice')
+================================================================================
+
+1. OVERVIEW & CORE CONCEPTS
+--------------------------------------------------------------------------------
+Key Concept 1 : The Linux kernel manages CPU scheduling using process PRIORITIES.
+               When multiple processes demand CPU time simultaneously, higher-
+               priority processes get executed first.
+
+Key Concept 2 : Nice Value (NI)
+               A user-adjustable score ranging from -20 to 19 that influences 
+               a process's priority.
+               - Higher Nice Value (+19)  = "Nicer" to other processes -> LOW CPU Priority.
+               - Lower Nice Value (-20)   = "Greedy" / Less nice -> HIGH CPU Priority.
+
+Priority Scale Relationship:
+- Kernel Priority (PR/PRI) : Scale ranges from 0 to 39.
+- Nice Value (NI)          : Scale ranges from -20 to +19.
+- Default Nice Value       : 0 (Normal priority, PR = 20).
+- Formula                  : PR = 20 + NI  (e.g., NI of -5 gives PR = 15).
+
+
+2. PERMISSIONS & RULES (THE "NICE" PARADOX)
+--------------------------------------------------------------------------------
+1. Standard Users:
+   - Can ONLY INCREASE a process's nice value (i.e., make their own tasks 
+     LOWER priority).
+   - CANNOT decrease a nice value below 0 or make a task higher priority.
+   - CANNOT alter nice values of processes owned by other users.
+
+2. Superuser (root):
+   - Can set or change nice values ANYWHERE from -20 to +19.
+   - Can INCREASE or DECREASE process priorities freely.
+
+
+3. COMMAND 1: THE 'nice' COMMAND (START WITH PRIORITY)
+--------------------------------------------------------------------------------
+Purpose: Launches a NEW command or process with a specified initial nice value.
+
+SYNTAX:
+  nice -n <nice_value> <command> [arguments]
+
+* Note: If you run `nice <command>` without specifying `-n`, Linux defaults to a 
+  nice value of +10.
+
+DEMO EXAMPLES:
+--------------------------------------------------------------------------------
+# Demo 1: Run a CPU-heavy backup task with LOW priority (nice = +15)
+nice -n 15 tar -czvf /backup/data.tar.gz /var/www/html/
+
+# Demo 2: Run a critical database indexing task with HIGH priority (nice = -10, requires root)
+sudo nice -n -10 python3 reindex_db.py
+
+# Demo 3: Verify the nice value of a newly spawned process
+ps -eo pid,ni,comm | grep tar
+
+
+4. COMMAND 2: THE 'renice' COMMAND (MODIFY EXISTING PROCESS)
+--------------------------------------------------------------------------------
+Purpose: Alters the nice value of an ALREADY RUNNING process or set of processes.
+
+SYNTAX:
+  renice -n <nice_value> [options] <target>
+
+--------------------------------------------------------------------------------
+Flag / Option     Description & Use Case
+--------------------------------------------------------------------------------
+-p <PIDs>         Modifies priority by Process ID (Default behavior).
+
+-u <username>     Modifies priority for ALL processes owned by a specific user.
+
+-g <PGRP>         Modifies priority for ALL processes in a Process Group ID.
+
+
+DEMO EXAMPLES:
+--------------------------------------------------------------------------------
+# Demo 1: Lower the priority of a running rogue process (PID 4120) to nice +15
+renice -n 15 -p 4120
+
+# Demo 2: Boost the priority of a running web service (PID 1042) to nice -5 (requires root)
+sudo renice -n -5 -p 1042
+
+# Demo 3: Set all running processes owned by user 'milan' to nice +5
+renice -n 5 -u milan
+
+
+5. MONITORING NICE VALUES IN 'top' AND 'ps'
+--------------------------------------------------------------------------------
+
+Viewing in 'ps':
+  ps -eo pid,user,pri,ni,comm
+  ps aux  --> Look at the 'STAT' column:
+              'N' means low priority (positive nice value).
+              '<' means high priority (negative nice value).
+
+Viewing in 'top' / 'htop':
+  Look at the 'NI' column. You can press 'r' inside 'top' to interactively 
+  renice a process by entering its PID and desired nice value.
+
+
+6. REAL-WORLD PRACTICAL SCENARIOS
+--------------------------------------------------------------------------------
+
+SCENARIO A: PREVENTING SYSTEM FREEZES DURING NIGHTLY BACKUPS
+--------------------------------------------------------------------------------
+Problem  : Nightly compression of log archives takes 100% CPU, causing website 
+           slowness for active users.
+Solution : Run the backup job with `nice -n 19`. It will use all available CPU 
+           when the system is idle, but instantly yield CPU cycles to web server 
+           requests when users visit the site.
+
+$ nice -n 19 tar -czf backup.tar.gz /var/log/ &
+
+
+SCENARIO B: EMERGENCY PRIORITY BOOST FOR FROZEN DATABASE
+--------------------------------------------------------------------------------
+Problem  : A MySQL database process (PID 2850) is responding slowly because 
+           background batch jobs are hogging CPU.
+Solution : Use `sudo renice` to elevate the database's priority above everything else.
+
+$ sudo renice -n -10 -p 2850
+
+================================================================================
+                                END OF NOTES
+================================================================================

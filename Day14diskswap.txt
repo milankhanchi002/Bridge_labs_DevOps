@@ -1,0 +1,66 @@
+- Managing swap space:
+mkswap * 
+swapon *
+swapoff *
+
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+                 MODULE: SWAP SPACE MANAGEMENT & TUNING
+================================================================================
+
+1. COMMANDS CHEAT SHEET
+--------------------------------------------------------------------------------
+mkswap   : Formats a partition or file into Linux Swap area.
+swapon   : Activates swap space (makes it usable by Kernel).
+swapoff  : Deactivates active swap space.
+free -h  : Displays total, used, and free RAM & Swap space.
+swapon -s: Summarizes active swap devices/files.
+
+
+2. SWAP FILE CREATION WORKFLOW (STEP-BY-STEP)
+--------------------------------------------------------------------------------
+Step 1: Allocate space    -> sudo fallocate -l 2G /swapfile
+Step 2: Restrict access   -> sudo chmod 600 /swapfile
+Step 3: Format as Swap    -> sudo mkswap /swapfile
+Step 4: Enable Swap       -> sudo swapon /swapfile
+Step 5: Verify Activation -> free -h  OR  sudo swapon --show
+
+
+3. PERSISTENT MOUNTING (/etc/fstab)
+--------------------------------------------------------------------------------
+File Path: /etc/fstab
+
+For Swap File:
+  /swapfile       none    swap    defaults    0    0
+
+For Swap Partition:
+  /dev/sdb2       none    swap    defaults    0    0
+  OR
+  UUID=a1b2c3...  none    swap    defaults    0    0
+
+
+4. SWAP REMOVAL WORKFLOW
+--------------------------------------------------------------------------------
+Step 1: Deactivate       -> sudo swapoff /swapfile
+Step 2: Remove Entry     -> Remove line from /etc/fstab
+Step 3: Delete File      -> sudo rm -f /swapfile
+
+
+5. KERNEL SWAPPINESS TUNING
+--------------------------------------------------------------------------------
+Swappiness Range : 0 to 100 (Default: 60)
+Low Swappiness   : Keeps data in physical RAM as long as possible (Fast).
+High Swappiness  : Aggressively moves idle processes to Swap (Frees RAM).
+
+Commands:
+  Check Current Value : cat /proc/sys/vm/swappiness
+  Temporary Change    : sudo sysctl vm.swappiness=10
+  Permanent Change    : Add `vm.swappiness=10` to /etc/sysctl.conf
+================================================================================
+                                END OF NOTES
+================================================================================

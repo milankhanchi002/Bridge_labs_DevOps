@@ -1,0 +1,42 @@
+1. Open Subscriptions
+       ↓
+2. Check Subscription ID and Tenant
+       ↓
+3. Open Cost Management + Billing
+       ↓
+4. Create a monthly budget with alerts
+       ↓
+5. Create:
+   azure-learning-dev-rg
+       ↓
+6. Add Tags:
+   Environment = Dev
+   Project = AzureLearning
+       ↓
+7. Explore IAM, Policies and Locks
+       ↓
+8. Open Cost Analysis
+       ↓
+9. Observe current cost
+
+
+
+
+
+
+PRIVATE VM
+10.0.2.4
+     │
+     │ Packet wants Internet
+     ▼
+ROUTING
+     │
+     ▼
+NSG CHECK
+     │
+     ▼
+NAT GATEWAY
+10.0.2.4 → 20.x.x.x
+     │
+     ▼
+INTERNET

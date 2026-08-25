@@ -1,0 +1,665 @@
+Phase-6
+ps 
+top 
+htop 
+bg
+fg
+nohup
+disown
+jobs
+nice
+renice
+nice 
+renice. 
+ Debugging and tracing processes:
+            strace.  *
+            lsof`.   *
+            nohup.   *
+- Scheduling tasks:
+            cron.  *
+            at.    *
+            systemd timers *
+- Performance monitoring:
+            vmstat.  
+            iostat
+            sar
+            netstat
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+               MODULE 2: THE 'strace' (SYSTEM CALL TRACER) COMMAND
+================================================================================
+
+1. OVERVIEW & CORE CONCEPT
+--------------------------------------------------------------------------------
+Command Name : strace (System Call Trace)
+Purpose      : Intercepts, records, and displays all system calls (syscalls) 
+               made by a user-space application to the Linux kernel, along with 
+               the signals the process receives.
+Golden Rule  : "Applications cannot touch hardware, memory, or network directly!"
+               Whenever an app needs to open a file, read disk data, bind a socket, 
+               or allocate memory, it must execute a System Call. `strace` acts 
+               like an X-Ray machine monitoring these kernel requests.
+
+How It Works Under the Hood:
+`strace` uses the **`ptrace()`** system call inside the kernel. It attaches to 
+the target process and pauses execution at every entry and exit point of a 
+syscall to read argument registers and return codes.
+
+
+2. COMMAND-LINE FLAGS REFERENCE
+--------------------------------------------------------------------------------
+SYNTAX:
+  strace [options] <command> [args]        <-- Launch and trace new command
+  strace [options] -p <PID>               <-- Attach trace to existing process
+
+--------------------------------------------------------------------------------
+Flag            Description & Use Case
+--------------------------------------------------------------------------------
+-p <PID>        Attaches `strace` to an ALREADY RUNNING process by PID.
+
+-e trace=<list> Filters trace output to show ONLY specific syscalls or groups.
+                Categories: `-e trace=file`, `-e trace=network`, 
+                `-e trace=process`, `-e trace=memory`, `-e trace=signal`.
+                Specific: `-e trace=openat,read,write,connect`.
+
+-o <file.txt>   Saves `strace` logs directly to a file (essential because output 
+                volume is massive).
+
+-c              Generates a summary/histogram report of total execution time, 
+                call counts, and error counts per syscall when process exits.
+
+-T              Displays time spent INSIDE each syscall in seconds (vital for 
+                pinpointing disk I/O or network bottlenecks).
+
+-tt / -ttt      Prints microsecond wall-clock timestamps at the start of each line.
+
+-ff             Follows child processes spawned by fork()/vfork() and writes 
+                separate log files for each PID (<filename>.<PID>).
+
+-s <size>       Sets maximum string output length (default is 32 bytes). Use 
+                `-s 1024` or `-s 2048` to read full SQL queries or payload text.
+
+
+3. COMMON SYSTEM CALLS & RETURN CODES TO REMEMBER
+--------------------------------------------------------------------------------
+Syscall Name    Description
+openat / open   Attempts to open a file or directory handle on disk.
+read / write    Reads bytes from or writes bytes to a File Descriptor.
+connect         Initiates an outbound network connection.
+bind / listen   Binds a socket to an IP/Port and listens for inbound traffic.
+execve          Executes a new binary program.
+futex           Fast Userspace Mutex (used for thread synchronization/locking).
+
+Common Return Codes:
+- 0 or Positive : Success (returns bytes read, file descriptor number, etc.).
+- -1 ENOENT     : Error No Entity (No such file or directory).
+- -1 EACCES     : Error Access (Permission denied).
+- -1 ETIMEDOUT  : Connection timed out.
+- -1 ECONNREFUSED: Connection refused by target server.
+
+
+4. PRODUCTION SCENARIOS & REAL-WORLD SOLUTIONS
+--------------------------------------------------------------------------------
+
+SCENARIO A: DEBUGGING APPLICATION CRASHES ON STARTUP (MISSING CONFIG FILE)
+--------------------------------------------------------------------------------
+Problem  : An app exits immediately with a vague error code.
+Solution : Trace file-related syscalls and look for ENOENT errors.
+
+# Step 1: Trace app execution and filter for file operations
+strace -e trace=file -o crash_debug.txt ./my_app
+
+# Step 2: Search for missing file attempts
+grep ENOENT crash_debug.txt
+
+
+SCENARIO B: TROUBLESHOOTING A FROZEN / HUNG PROCESS
+--------------------------------------------------------------------------------
+Problem  : A background Python/Java process is stuck at 0% CPU and not responding.
+Solution : Attach `strace` to the live PID with microsecond timing flags.
+
+# Step 1: Attach strace to live process
+sudo strace -T -tt -p <PID>
+
+# Step 2: Analyze where execution stops. If stuck on `connect(...)`, the app 
+# is blocked waiting for an external network host that isn't responding!
+
+
+SCENARIO C: PROFILING SYSTEM PERFORMANCE BOTTLENECK (-c REPORT)
+--------------------------------------------------------------------------------
+Problem  : A database or script is running extremely slowly.
+Solution : Generate a syscall stats summary table.
+
+strace -c python3 heavy_script.py
+
+Sample Summary Output:
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 85.42    0.124500          12     10375           read
+ 12.18    0.017750         104       170        12 openat
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.145700                 10545        12 total
+
+
+5. INTERVIEW QUICK-FIRE QUESTIONS
+--------------------------------------------------------------------------------
+Q1: What is the main performance drawback of using `strace`?
+A1: High execution overhead! `strace` context-switches execution to kernel space 
+    and back on EVERY single syscall via `ptrace()`, which can slow processes 
+    down by 10x to 100x. Avoid running unfiltered `strace` on high-load production DBs.
+
+Q2: What is the difference between `strace` and `lsof`?
+A2: `lsof` provides a STATIC snapshot of currently opened files and sockets. 
+    `strace` provides a DYNAMIC, real-time event log of all requests to open, 
+    read, write, or close those files/sockets over time.
+================================================================================
+                                END OF NOTES
+================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+                 MODULE 2: THE 'lsof' (LIST OPEN FILES) COMMAND
+================================================================================
+
+1. OVERVIEW & CORE CONCEPT
+--------------------------------------------------------------------------------
+Command Name : lsof (List Open Files)
+Purpose      : Identifies which files, directories, network sockets, devices, 
+               and shared libraries are currently held open by which running 
+               processes and users.
+Golden Rule  : "Everything in Linux is a file!" Regular text files, active 
+               directories, network connections (TCP/UDP sockets), hardware 
+               devices, pipes, and shared object libraries (.so) are all handled 
+               by the kernel as File Descriptors (FDs). `lsof` exposes them all.
+
+How It Works Under the Hood:
+`lsof` queries the virtual `/proc` file system (specifically `/proc/<PID>/fd/` 
+and `/proc/net/`) to extract open file descriptor information directly from 
+kernel memory.
+
+
+2. COMMAND-LINE FLAGS REFERENCE
+--------------------------------------------------------------------------------
+SYNTAX:
+  lsof [options]
+
+--------------------------------------------------------------------------------
+Flag            Description & Use Case
+--------------------------------------------------------------------------------
+-i [proto][:port] Lists open network sockets (e.g., `lsof -i`, `lsof -i :8080`, 
+                or `lsof -i tcp`).
+
+-p <PID>        Lists all open files held by a specific Process ID.
+
+-u <username>   Lists all open files held by a specific user account.
+
++D <directory>  Recursively scans a directory tree to find processes holding 
+                open handles inside it (essential for unmount errors).
+
+-c <command>    Lists open files for processes matching an executable name 
+                (e.g., `lsof -c nginx`).
+
+-t              Terse mode; outputs ONLY Process IDs (PIDs) with no headers. 
+                Designed for pipe-chaining directly into `kill`.
+
+-a              Logical AND operator. Combines multiple selection flags 
+                (e.g., `lsof -a -u milan -i` matches user 'milan' AND network).
+
++L 1            Shows open files that have been unlinked/deleted from disk 
+                but are still held in memory by active processes.
+
+
+3. OUTPUT COLUMN BREAKDOWN & DEMONSTRATION
+--------------------------------------------------------------------------------
+Command: sudo lsof -i :22
+
+Sample Output:
+COMMAND   PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+sshd     1042 root    3u  IPv4  21450      0t0  TCP *:22 (LISTEN)
+sshd     2850 root    4u  IPv4  89412      0t0  TCP 192.168.1.10:22->192.168.1.50:54210 (ESTABLISHED)
+
+Column Explanation:
+1. COMMAND  : Executable name running the process.
+2. PID      : Process ID number.
+3. USER     : Account name owning the process.
+4. FD       : File Descriptor identifier.
+              - Standard FDs : `cwd` (Current Working Dir), `txt` (Program code), `mem` (Memory-mapped).
+              - Numbers      : `3u` = Descriptor 3 in `u` (read and write) mode (`r`=read, `w`=write).
+5. TYPE     : File type (`REG` = Regular file, `DIR` = Directory, `IPv4`/`IPv6` = Network socket, `FIFO` = Pipe).
+6. NAME     : Full file path, mount point, or network connection string (`IP:Port`).
+
+
+4. PRODUCTION SCENARIOS & REAL-WORLD SOLUTIONS
+--------------------------------------------------------------------------------
+
+SCENARIO A: RESOLVING "PORT ALREADY IN USE" ERRORS
+--------------------------------------------------------------------------------
+Problem  : Starting a service fails with `bind: Address already in use: 8080`.
+Solution : Find the process hogging port 8080 and terminate it.
+
+# Step 1: Find process details
+sudo lsof -i :8080
+
+# Step 2: One-liner to kill the offending process immediately using terse mode (-t)
+sudo kill -9 $(sudo lsof -t -i :8080)
+
+
+SCENARIO B: FIXING "TARGET IS BUSY" UNMOUNT ERRORS (`umount`)
+--------------------------------------------------------------------------------
+Problem  : Unmounting a drive fails with `umount: /mnt/backup: target is busy`.
+Solution : Identify which shell session or daemon is locking the directory.
+
+# Step 1: List all processes locking files inside /mnt/backup
+sudo lsof +D /mnt/backup
+
+# Step 2: Close the open handles or kill the listed PIDs to unmount cleanly.
+
+
+SCENARIO C: RECLAIMING GHOST DISK SPACE (DELETED FILES HELD OPEN)
+--------------------------------------------------------------------------------
+Problem  : `df -h` shows disk at 100% capacity, but `du -sh /*` cannot find 
+           the large files because they were deleted (`rm`) while a process was 
+           still writing to them.
+Solution : Find deleted files that are still consuming disk space via open handles.
+
+# Step 1: Search for deleted files held open by processes
+sudo lsof | grep -i deleted
+
+# Step 2: Restart or kill the associated PID to release the disk allocation.
+
+
+SCENARIO D: AUDITING USER NETWORK ACTIVITY
+--------------------------------------------------------------------------------
+Problem  : Audit active outbound network connections initiated by user 'milan'.
+Solution : Combine `-u` and `-i` flags using the `-a` (AND) operator.
+
+sudo lsof -a -u milan -i
+
+
+5. CHEATSHEET & QUICK REFERENCE
+--------------------------------------------------------------------------------
+Use Case                                              Command
+--------------------------------------------------------------------------------
+List all open network ports and connections           sudo lsof -i
+Find process listening on specific port               sudo lsof -i :<port_number>
+Kill process using a port in one line                 sudo kill -9 $(sudo lsof -t -i :<port>)
+Find open files held by a specific PID                sudo lsof -p <PID>
+Find processes locking a directory                    sudo lsof +D /path/to/dir
+Find unlinked/deleted files holding disk space        sudo lsof | grep deleted
+================================================================================
+                                END OF NOTES
+================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+               TOPIC: PERSISTENT BACKGROUND EXECUTION ('nohup')
+================================================================================
+
+1. OVERVIEW & CORE CONCEPT
+--------------------------------------------------------------------------------
+Command Name : nohup (No Hangup)
+Purpose      : Executes a command or script while instructing it to IGNORE 
+               the SIGHUP (Signal Hangup, Signal 1) signal.
+Golden Rule  : "Never let an SSH disconnection kill your long-running jobs!"
+               By default, when an SSH session or terminal tab closes, the OS 
+               sends `SIGHUP` to all child processes spawned by that shell, 
+               terminating them immediately. `nohup` catches and discards this 
+               signal so the process continues running safely on the server.
+
+How It Works Under the Hood:
+1. `nohup` intercepts `SIGHUP` (Signal 1) sent by the dying controlling terminal (TTY).
+2. It disconnects standard input (`stdin`), standard output (`stdout`), and standard 
+   error (`stderr`) from the terminal.
+3. It redirects stdout and stderr to a file (default `nohup.out`) so output isn't lost.
+
+
+2. COMMAND SYNTAX & OUTPUT REDIRECTION
+--------------------------------------------------------------------------------
+BASIC SYNTAX:
+  nohup <command> [arguments] &
+
+* IMPORTANT: Always append `&` at the end! 
+  `nohup` protects against SIGHUP, but `&` places the command into the background. 
+  Without `&`, your shell terminal remains blocked!
+
+DEFAULT OUTPUT BEHAVIOR:
+  If no output file is explicitly specified, `nohup` creates a log file:
+  - `./nohup.out` (in the current directory)
+  - `~/nohup.out` (in your home directory if current directory is not writable)
+
+
+3. RECOMMENDED PRODUCTION SYNTAX (CUSTOM LOG REDIRECTION)
+--------------------------------------------------------------------------------
+Instead of relying on the default `nohup.out`, best practice in production is 
+to explicitly redirect standard output (`1`) and standard error (`2`) to a custom log:
+
+$ nohup python3 -u data_sync.py > sync.log 2>&1 &
+
+Line Breakdown:
+- `python3 -u`   : `-u` forces unbuffered binary stdout/stderr (writes logs immediately).
+- `> sync.log`   : Redirects standard output (stdout / 1) to `sync.log`.
+- `2>&1`         : Redirects standard error (stderr / 2) to the same place as stdout.
+- `&`            : Sends job to background and returns command prompt immediately.
+
+
+4. REAL-WORLD PRODUCTION SCENARIOS
+--------------------------------------------------------------------------------
+
+SCENARIO A: OVERNIGHT DATABASE MIGRATION OVER SSH
+--------------------------------------------------------------------------------
+Problem  : You need to run a 6-hour database migration or long backup script over 
+           SSH, but laptop sleep or Wi-Fi disconnection will kill the terminal session.
+Solution : Run the job wrapped in `nohup`.
+
+# Step 1: Launch long process in background
+nohup php artisan migrate --force > migration.log 2>&1 &
+
+# Step 2: Note the returned PID (e.g., [1] 9120) and verify it's running
+pgrep -fl migrate
+
+# Step 3: Exit SSH safely. The job continues on the server.
+exit
+
+
+SCENARIO B: EMERGENCY DETACHMENT USING 'disown' (FORGOT NOHUP)
+--------------------------------------------------------------------------------
+Problem  : You started a 2-hour backup script (`tar -czf backup.tar.gz /data`) 
+           WITHOUT `nohup`, and now you must shut down your laptop and leave.
+Solution : Use `Ctrl+Z`, `bg`, and `disown` to detach it dynamically.
+
+# Step 1: Suspend running foreground job
+Press `Ctrl + Z`  --> [1]+ Stopped tar -czf backup.tar.gz /data
+
+# Step 2: Move to background
+bg %1             --> [1]+ tar -czf backup.tar.gz /data &
+
+# Step 3: Remove from shell's job table so SIGHUP is ignored on exit
+disown %1
+
+# Step 4: Safely exit terminal/SSH
+exit
+
+
+5. MONITORING & VERIFYING NOHUP JOBS
+--------------------------------------------------------------------------------
+1. Check if the nohup process is still running:
+   pgrep -fl <script_name>
+   ps -ef | grep <script_name>
+
+2. Stream live log output in real time:
+   tail -f sync.log
+
+3. Kill a running nohup process (Must use `kill` by PID since it ignores SIGHUP):
+   kill 9120      (Sends SIGTERM / 15)
+   kill -9 9120   (Sends SIGKILL / 9 if unresponsive)
+
+
+6. QUICK COMPARISON SUMMARY
+--------------------------------------------------------------------------------
+Method            Ignores SIGHUP?   Detached TTY?   Best Use Case
+--------------------------------------------------------------------------------
+`command &`       NO                NO              Quick background tasks during 
+                                                    active terminal sessions.
+
+`nohup command &` YES               YES             Standalone background scripts, 
+                                                    simple overnight cron-like jobs.
+
+`screen` / `tmux` YES               YES             Complex interactive sessions 
+                                                    requiring multiple terminal tabs.
+================================================================================
+                                END OF NOTES
+================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+                 MODULE 3: TASK SCHEDULING WITH 'cron'
+================================================================================
+
+1. OVERVIEW & CORE CONCEPT
+--------------------------------------------------------------------------------
+Command/Tool : cron / crontab
+Daemon Name  : crond
+Purpose      : Time-based job scheduler in Unix-like operating systems. Enables 
+               users to schedule jobs (commands or shell scripts) to run 
+               periodically at specified fixed times, dates, or intervals.
+
+How It Works Under the Hood:
+- The `crond` daemon wakes up every 60 seconds.
+- It parses `/var/spool/cron/crontabs/`, `/etc/crontab`, and `/etc/cron.d/`.
+- If the current minute, hour, day, month, and day-of-week match the entry, 
+  it spawns a child shell process to execute the job.
+
+
+2. CRONTAB SYNTAX & FIELDS
+--------------------------------------------------------------------------------
+Field Position   Allowed Values   Description
+--------------------------------------------------------------------------------
+1st              0 - 59           Minute
+2nd              0 - 23           Hour (24-hour format)
+3rd              1 - 31           Day of Month
+4th              1 - 12           Month of Year
+5th              0 - 7            Day of Week (0 and 7 both represent Sunday)
+
+Operators:
+*   (Asterisk) : Matches every possible value (e.g., every minute/hour).
+,   (Comma)    : Value list separator (e.g., `1,15,30`).
+-   (Hyphen)   : Range definition (e.g., `1-5` for Monday to Friday).
+/   (Slash)    : Step increments (e.g., `*/10` for every 10 minutes).
+
+
+3. COMMAND FLAGS REFERENCE
+--------------------------------------------------------------------------------
+Command               Description
+--------------------------------------------------------------------------------
+crontab -e            Edits current user's crontab file using default editor.
+crontab -l            Lists active scheduled cron jobs for current user.
+crontab -r            Removes/deletes all active cron jobs for current user.
+crontab -u <user> -e  Edits cron jobs for a specific user account (requires root).
+
+
+4. PRODUCTION BEST PRACTICES
+--------------------------------------------------------------------------------
+1. ALWAYS USE ABSOLUTE PATHS:
+   Cron runs with a minimal environment path.
+   Bad  : `0 2 * * * python3 script.py`
+   Good : `/usr/bin/python3 /home/milan/scripts/script.py`
+
+2. CAPTURE LOG OUTPUT & ERRORS:
+   Redirect stdout and stderr to prevent system mail pollution.
+   Example : `30 1 * * * /home/milan/clean.sh > /var/log/clean.log 2>&1`
+
+3. DISCARD UNWANTED OUTPUT:
+   Example : `0 * * * * /home/milan/check.sh > /dev/null 2>&1`
+
+
+5. QUICK TROUBLESHOOTING CHEATSHEET
+--------------------------------------------------------------------------------
+Problem                             Inspection Command
+--------------------------------------------------------------------------------
+Check if crond service is active    `systemctl status cron`
+Inspect execution history logs      `grep CRON /var/log/syslog`
+Verify user permissions             Check `/etc/cron.allow` or `/etc/cron.deny`
+================================================================================
+                                END OF NOTES
+================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+================================================================================
+                      LINUX SYSTEM ADMINISTRATION NOTES
+               MODULE 3: ENTERPRISE TASK SCHEDULING (systemd timers)
+================================================================================
+
+1. OVERVIEW & DUAL-UNIT ARCHITECTURE
+--------------------------------------------------------------------------------
+Systemd timers use two distinct configuration files stored in `/etc/systemd/system/`:
+
+1. Service Unit (`<name>.service`) : Defines WHAT to execute.
+2. Timer Unit   (`<name>.timer`)   : Defines WHEN to trigger the associated service.
+
+Key Enterprise Advantages over Cron:
+- Unified Logging  : Integrates directly with `journalctl`.
+- Missed Job Catchup: `Persistent=true` ensures jobs missed during downtime run 
+                     immediately upon boot.
+- Dependency Rules : Can wait for targets (e.g., `After=network.target`).
+- High Precision   : Supports sub-second / nanosecond timing.
+
+
+2. TIMER TRIGGER TYPES
+--------------------------------------------------------------------------------
+A) Realtime / Calendar Timers (Absolute Wall-Clock Schedules):
+   Key: `OnCalendar=`
+   Syntax Examples:
+   - `OnCalendar=*:*`                 : Runs every minute.
+   - `OnCalendar=*-*-* 02:30:00`      : Runs daily at 2:30 AM.
+   - `OnCalendar=Mon..Fri 09:00:00`   : Runs Monday through Friday at 9:00 AM.
+   - `OnCalendar=*-*-01 00:00:00`     : Runs 1st day of every month at midnight.
+
+B) Monotonic Timers (Relative to System Events):
+   - `OnBootSec=15min`                : Runs 15 minutes after system boots up.
+   - `OnUnitActiveSec=1h`             : Runs 1 hour after service was last activated.
+
+
+3. PRODUCTION CONFIGURATION TEMPLATE
+--------------------------------------------------------------------------------
+File 1: `/etc/systemd/system/app_backup.service`
+[Unit]
+Description=Database Backup Service
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/scripts/backup.py
+User=root
+
+
+File 2: `/etc/systemd/system/app_backup.timer`
+[Unit]
+Description=Trigger Database Backup Daily
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+
+
+4. ESSENTIAL MANAGEMENT COMMANDS
+--------------------------------------------------------------------------------
+Command                                Description
+--------------------------------------------------------------------------------
+sudo systemctl daemon-reload           Reloads systemd to read new/edited units.
+sudo systemctl enable --now <t>.timer  Enables timer at boot and starts it now.
+sudo systemctl status <t>.timer        Checks operational state of a timer.
+sudo systemctl list-timers             Lists all active timers with NEXT/LAST run times.
+sudo journalctl -u <s>.service         Inspects detailed execution logs for the service.
+================================================================================
+                                END OF NOTES
+================================================================================

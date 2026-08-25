@@ -65,6 +65,19 @@ fg
 nice
 renice
 nohup
+ Debugging and tracing processes:
+            strace
+            lsof`
+            nohup
+- Scheduling tasks:
+            cron
+            at
+            systemd timers
+- Performance monitoring:
+            vmstat
+            iostat
+            sar
+            netstat
 Phase 7 — Storage
 df
 du
@@ -73,6 +86,10 @@ mount
 umount
 fdisk
 blkid
+- Managing swap space:
+mkswap * 
+swapon *
+swapoff *
 Phase 8 — Networking
 ip
 ss
