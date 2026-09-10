@@ -1,0 +1,1438 @@
+====================================================================
+AZURE VIRTUAL MACHINES (VM) - NOTES
+====================================================================
+
+
+####################################################################
+1. AZURE VIRTUAL MACHINE (VM)
+####################################################################
+
+VM = Virtual Machine.
+
+A Virtual Machine is a virtual computer running on Azure physical
+infrastructure.
+
+Azure has physical servers in data centers. Using virtualization,
+the physical resources are logically divided and allocated to multiple
+Virtual Machines.
+
+Concept:
+
+Azure Physical Infrastructure
+        |
+        v
+Virtualization Layer
+        |
+   +----+----+
+   |         |
+   v         v
+  VM1       VM2
+
+
+A VM can have:
+
+- Operating System
+- vCPU
+- RAM
+- OS Disk
+- Data Disks
+- Network Interface (NIC)
+- Private IP
+- Optional Public IP
+
+
+Basic networking architecture:
+
+Azure Region
+    |
+    v
+VNet
+    |
+    v
+Subnet
+    |
+    v
+NIC
+    |
+    v
+Virtual Machine
+
+
+Important:
+
+VM = Compute resource
+
+NIC = Network interface/identity of the VM
+
+Private IP is usually assigned to the NIC.
+
+
+====================================================================
+2. VM IMAGE
+====================================================================
+
+VM Image = A template or starting point used to create a Virtual Machine.
+
+An image can contain:
+
+- Operating System
+- OS configuration
+- Preinstalled software
+- Settings
+- Dependencies
+
+
+When we create a VM, Azure uses an image as the base.
+
+
+Concept:
+
+VM Image
+    |
+    v
+Azure creates OS Disk
+    |
+    v
+Virtual Machine
+    |
+    v
+VM starts with the selected OS/software state
+
+
+Example:
+
+Ubuntu 24.04 Image
+        |
+        v
+Ubuntu VM
+
+
+Windows Server Image
+        |
+        v
+Windows VM
+
+
+Important memory:
+
+IMAGE decides:
+
+"What will the VM start with?"
+
+
+====================================================================
+3. MARKETPLACE IMAGE
+====================================================================
+
+Marketplace Image = Ready-made image available through Azure Marketplace.
+
+Examples:
+
+- Ubuntu Server
+- Windows Server
+- Red Hat Enterprise Linux
+- Debian
+- SQL Server images
+
+
+Example:
+
+Azure Marketplace
+       |
+       v
+Ubuntu 24.04 Image
+       |
+       v
+Create VM
+       |
+       v
+Ubuntu VM
+
+
+Marketplace images are generally provided by:
+
+- Microsoft
+- Operating system vendors
+- Software vendors
+- Other publishers
+
+
+Use case:
+
+When we want to quickly create a standard VM with a ready-made OS or
+software stack.
+
+
+Example:
+
+Requirement:
+
+"I need a normal Ubuntu server."
+
+Solution:
+
+Select Ubuntu Marketplace Image
+        |
+        v
+Create VM
+
+
+====================================================================
+4. CUSTOM IMAGE
+====================================================================
+
+Custom Image = An image created by us or by an organization.
+
+Suppose we configure a VM like this:
+
+Ubuntu
++ Java
++ Docker
++ Nginx
++ Monitoring Agent
++ Security Configuration
++ Company Application Dependencies
+
+
+Instead of manually configuring every new VM again:
+
+Configured VM
+      |
+      v
+Create Custom Image
+      |
+      v
+Custom Image
+      |
+      +----------+----------+
+      |          |          |
+      v          v          v
+     VM1        VM2        VM3
+
+
+Every new VM can start from the same standardized configuration.
+
+
+Use cases:
+
+- Company standard server image
+- Preconfigured application environment
+- Security baseline
+- Preinstalled monitoring tools
+- Faster deployment
+- Consistent infrastructure
+
+
+Important memory:
+
+Marketplace Image
+=
+Ready-made image provided by Azure/vendor.
+
+
+Custom Image
+=
+Our own reusable preconfigured template.
+
+
+====================================================================
+5. IMAGE vs CUSTOM DATA
+====================================================================
+
+IMAGE = Starting template/state of the VM.
+
+CUSTOM DATA = Instructions/configuration provided during provisioning
+or initial boot.
+
+
+Example:
+
+Image:
+
+Ubuntu 24.04
+
+
+Custom Data:
+
+- Install Nginx
+- Install Docker
+- Start services
+
+
+Concept:
+
+Ubuntu Image
+      +
+Custom Data Instructions
+      |
+      v
+Configured VM
+
+
+Memory:
+
+Custom Image
+=
+"Already prepared template."
+
+
+Custom Data
+=
+"Instructions to configure the VM when it is created."
+
+
+====================================================================
+6. VM SIZE
+====================================================================
+
+VM Size determines the compute capacity and hardware characteristics
+allocated to the Virtual Machine.
+
+VM size can affect:
+
+- Number of vCPUs
+- Amount of RAM
+- Networking capabilities
+- Disk performance/capabilities
+- Other supported hardware features
+
+
+Example:
+
+Small VM:
+
+2 vCPU
+4 GB RAM
+
+
+Larger VM:
+
+8 vCPU
+32 GB RAM
+
+
+Important:
+
+Image and Size are different.
+
+
+IMAGE:
+
+What software/OS the VM starts with.
+
+
+SIZE:
+
+How much compute power the VM gets.
+
+
+Simple analogy:
+
+IMAGE
+=
+Which operating system/software is installed on a computer.
+
+
+SIZE
+=
+How powerful the computer is.
+
+
+====================================================================
+7. VM SERIES
+====================================================================
+
+Azure VM sizes are organized into different series/families.
+
+Different series are designed for different workload patterns.
+
+Examples:
+
+- B-Series
+- D-Series
+
+
+We do not need to memorize every SKU initially.
+
+Understand the workload purpose first.
+
+
+====================================================================
+8. B-SERIES
+====================================================================
+
+B-Series is generally designed for burstable workloads.
+
+Suitable when:
+
+- Normal CPU usage is low/moderate
+- CPU usage occasionally increases
+- Workload does not need high CPU continuously
+
+
+Example use cases:
+
+- Development servers
+- Testing environments
+- Small applications
+- Low-traffic websites
+- Small databases or services depending on workload
+
+
+Concept:
+
+Normal workload
+      |
+      v
+Low CPU usage
+      |
+      v
+Occasional high CPU demand
+      |
+      v
+Burst capability
+
+
+Memory:
+
+B-Series
+=
+Burstable workloads.
+
+
+====================================================================
+9. D-SERIES
+====================================================================
+
+D-Series is generally a general-purpose VM family.
+
+It provides a balanced combination of:
+
+- CPU
+- Memory
+
+
+Example use cases:
+
+- Application servers
+- Web servers
+- Enterprise applications
+- General-purpose workloads
+
+
+Concept:
+
+D-Series
+
+       Balanced
+      /        \
+     v          v
+
+   CPU         Memory
+
+
+Memory:
+
+D-Series
+=
+General-purpose balanced compute.
+
+
+====================================================================
+10. VM CREATION - MAIN DECISIONS
+====================================================================
+
+When creating a VM, we usually think about:
+
+
+1. IMAGE
+
+What OS/software should the VM start with?
+
+
+2. SIZE
+
+How much CPU/RAM/performance is required?
+
+
+3. NETWORKING
+
+Where will the VM exist?
+
+VNet
+   |
+Subnet
+   |
+NIC
+   |
+Private IP
+
+
+4. AUTHENTICATION
+
+How will we log in?
+
+SSH Key
+OR
+Password
+
+
+5. AVAILABILITY
+
+How should Azure place the VM to reduce downtime risk?
+
+- None
+- Availability Set
+- Availability Zone
+
+
+====================================================================
+11. WHY AVAILABILITY IS IMPORTANT
+====================================================================
+
+Suppose an application runs on only one VM.
+
+
+Internet
+    |
+    v
+   VM1
+
+
+If VM1 becomes unavailable:
+
+Application
+    |
+    v
+DOWN
+
+
+VM can become unavailable because of:
+
+- Hardware failure
+- Rack/infrastructure failure
+- Planned maintenance
+- Datacenter/zone failure
+
+
+To reduce downtime, Azure provides availability options.
+
+
+====================================================================
+12. AVAILABILITY OPTIONS
+====================================================================
+
+Main concepts:
+
+1. None
+2. Availability Set
+3. Availability Zone
+
+
+====================================================================
+13. NONE
+====================================================================
+
+If we choose:
+
+Availability Option = None
+
+
+The VM is created without explicitly placing it into an Availability Set
+or Availability Zone through that availability option.
+
+
+Concept:
+
+Application
+    |
+    v
+Single VM
+
+
+If the VM or its underlying infrastructure becomes unavailable, the
+application may also become unavailable.
+
+
+Suitable for:
+
+- Learning
+- Development
+- Testing
+- Temporary workloads
+- Non-critical workloads
+
+
+Example:
+
+Student Practice VM
+       |
+       v
+Availability = None
+
+
+Memory:
+
+None
+=
+No explicit high availability placement.
+
+
+====================================================================
+14. AVAILABILITY SET
+====================================================================
+
+Availability Set helps improve availability by distributing multiple VMs
+across different infrastructure groups.
+
+Two important concepts:
+
+1. Fault Domain
+2. Update Domain
+
+
+Concept:
+
+Availability Set
+        |
+        +------------------+
+        |                  |
+        v                  v
+
+Fault Domains        Update Domains
+
+
+====================================================================
+15. FAULT DOMAIN
+====================================================================
+
+A Fault Domain represents a logical grouping of infrastructure designed
+to reduce the chance that a single underlying hardware failure affects
+all VMs.
+
+
+Concept:
+
+Availability Set
+
+Fault Domain 1
+     |
+     v
+    VM1
+
+
+Fault Domain 2
+     |
+     v
+    VM2
+
+
+If infrastructure associated with Fault Domain 1 fails:
+
+VM1 = May be unavailable
+
+VM2 = Can remain available
+
+
+Example:
+
+Application
+      |
+      v
+Load Balancer
+   |        |
+   v        v
+VM1       VM2
+
+FD1       FD2
+
+
+If FD1 fails:
+
+Load Balancer
+      |
+      X --> VM1
+      |
+      v
+     VM2
+
+
+Application can continue if the architecture is properly designed.
+
+
+====================================================================
+16. UPDATE DOMAIN
+====================================================================
+
+Azure sometimes performs planned maintenance.
+
+If all VMs are updated/restarted at the same time:
+
+VM1 = Down
+VM2 = Down
+VM3 = Down
+
+
+Application may become unavailable.
+
+
+Update Domains help distribute VMs so planned maintenance can be
+performed in groups.
+
+
+Example:
+
+Update Domain 1
+        |
+       VM1
+
+
+Update Domain 2
+        |
+       VM2
+
+
+Update Domain 3
+        |
+       VM3
+
+
+Conceptually:
+
+First:
+
+Update/Restart VM1
+
+VM2 and VM3 remain available.
+
+
+Then:
+
+Update/Restart VM2
+
+Other VMs remain available.
+
+
+Memory:
+
+Fault Domain
+=
+Protection from certain underlying infrastructure/hardware failures.
+
+
+Update Domain
+=
+Helps reduce impact of planned maintenance.
+
+
+====================================================================
+17. AVAILABILITY ZONE
+====================================================================
+
+Availability Zones provide physical separation within a supported
+Azure Region.
+
+Concept:
+
+Azure Region
+      |
+      +-------------------+-------------------+
+      |                   |                   |
+      v                   v                   v
+
+    Zone 1              Zone 2              Zone 3
+      |                   |                   |
+      v                   v                   v
+
+    VM1                 VM2                 VM3
+
+
+Availability Zones are designed with separate infrastructure such as:
+
+- Power
+- Cooling
+- Networking
+
+
+Example architecture:
+
+                    Load Balancer
+                         |
+                +--------+--------+
+                |                 |
+                v                 v
+
+             Zone 1             Zone 2
+               VM1                VM2
+
+
+If Zone 1 experiences a failure:
+
+Load Balancer
+       |
+       X --> VM1
+       |
+       v
+      VM2
+
+
+Application can continue if redundancy and architecture are configured
+properly.
+
+
+Memory:
+
+Availability Zone
+=
+Physical separation across zones/datacenter infrastructure within the
+same supported Azure Region.
+
+
+====================================================================
+18. AVAILABILITY SET vs AVAILABILITY ZONE
+====================================================================
+
+Availability Set:
+
+Distributes VMs across:
+
+- Fault Domains
+- Update Domains
+
+
+Focus:
+
+Reducing impact of hardware/infrastructure failures and planned
+maintenance within the availability set architecture.
+
+
+Availability Zone:
+
+Distributes resources across physically separate zones within a
+supported Azure Region.
+
+
+Focus:
+
+Protection against larger zone/datacenter-level failures.
+
+
+Simple comparison:
+
+
+Availability Set:
+
+Same regional datacenter infrastructure context
+        |
+        +---- Fault Domain 1 -> VM1
+        |
+        +---- Fault Domain 2 -> VM2
+
+
+Availability Zone:
+
+Same Azure Region
+        |
+        +---- Zone 1 -> VM1
+        |
+        +---- Zone 2 -> VM2
+
+
+Memory:
+
+Availability Set
+=
+Spread across infrastructure groups.
+
+
+Availability Zone
+=
+Spread across physically separate zones.
+
+
+====================================================================
+19. NONE vs AVAILABILITY SET vs AVAILABILITY ZONE
+====================================================================
+
+NONE:
+
+VM
+ |
+Single workload placement
+
+
+Use:
+
+Dev/Test/Learning
+Non-critical workloads
+
+
+AVAILABILITY SET:
+
+Load Balancer
+      |
+   +--+--+
+   |     |
+   v     v
+
+ VM1   VM2
+ FD1   FD2
+
+
+Use:
+
+High availability across fault/update domains.
+
+
+AVAILABILITY ZONE:
+
+Load Balancer
+      |
+   +--+--+
+   |     |
+   v     v
+
+Zone1 Zone2
+ VM1   VM2
+
+
+Use:
+
+Higher availability across physically separate zones.
+
+
+====================================================================
+20. AUTHENTICATION
+====================================================================
+
+Authentication answers:
+
+"How will the user prove identity and log in to the VM?"
+
+
+For Linux VMs, common options:
+
+1. SSH Key
+2. Password
+
+
+====================================================================
+21. SSH
+====================================================================
+
+SSH = Secure Shell.
+
+SSH is a protocol used to securely connect to and manage remote systems,
+especially Linux servers.
+
+
+Architecture:
+
+Your Laptop
+     |
+     | SSH
+     v
+Azure Linux VM
+
+
+Example command:
+
+ssh azureuser@<VM-IP>
+
+
+If authentication requires a private key:
+
+ssh -i mykey.pem azureuser@<VM-IP>
+
+
+====================================================================
+22. PASSWORD AUTHENTICATION
+====================================================================
+
+Password authentication uses:
+
+Username
++
+Password
+
+
+Example:
+
+Username:
+
+azureuser
+
+
+Password:
+
+MyStrongPassword
+
+
+Flow:
+
+Your Laptop
+      |
+      | "I am azureuser"
+      v
+VM
+      |
+      | "Provide password"
+      v
+Your Laptop
+      |
+      | Password
+      v
+VM
+      |
+      | Verify credentials
+      v
+Login
+
+
+Concept:
+
+User knows a secret.
+
+The server verifies whether the provided authentication credential is
+valid.
+
+
+Potential issue:
+
+If SSH is exposed to the Internet, attackers may attempt repeated
+password guesses.
+
+
+Therefore, strong passwords and appropriate network security controls
+are important.
+
+
+====================================================================
+23. SSH KEY AUTHENTICATION
+====================================================================
+
+SSH Key authentication uses a key pair.
+
+The pair contains:
+
+1. Private Key
+2. Public Key
+
+
+Concept:
+
+SSH Key Pair
+
+Private Key
+      +
+Public Key
+
+
+Private Key:
+
+- Kept securely by the user
+- Must not be shared
+- Used by the client to prove identity
+
+
+Public Key:
+
+- Can be stored on the VM/server
+- Associated with the user account
+
+
+Architecture:
+
+Your Laptop
+    |
+    +---- Private Key
+    |
+    | SSH Connection
+    v
+Azure VM
+    |
+    +---- Public Key
+         stored for authorized user
+
+
+====================================================================
+24. HOW SSH KEY AUTHENTICATION WORKS
+====================================================================
+
+Step 1:
+
+Generate or obtain an SSH key pair.
+
+
+Private Key:
+
+Stays with the user.
+
+
+Public Key:
+
+Is provided to Azure/placed on the VM for the selected user.
+
+
+Concept:
+
+Your Laptop
+
+Private Key
+     |
+     | SSH Authentication
+     v
+
+Azure VM
+
+Public Key
+
+
+Step 2:
+
+User attempts to connect.
+
+
+Example:
+
+ssh -i mykey.pem azureuser@<VM-IP>
+
+
+Step 3:
+
+The SSH authentication process uses cryptography to verify that the
+client possesses the correct private key corresponding to the authorized
+public key.
+
+
+Step 4:
+
+If verification succeeds:
+
+LOGIN SUCCESS
+
+
+If the client does not have the correct private key:
+
+LOGIN FAILED
+
+
+Important:
+
+The private key itself is not sent to the server as a normal password.
+
+
+====================================================================
+25. WHERE PUBLIC KEY IS STORED
+====================================================================
+
+For a Linux user, authorized public keys are commonly stored in:
+
+~/.ssh/authorized_keys
+
+
+Example:
+
+/home/azureuser/.ssh/authorized_keys
+
+
+Concept:
+
+Azure VM
+   |
+   +---- azureuser
+           |
+           +---- .ssh
+                   |
+                   +---- authorized_keys
+                            |
+                            +---- Public Key
+
+
+====================================================================
+26. SSH KEY CONNECTION FLOW
+====================================================================
+
+Your Laptop
+    |
+    | Command:
+    |
+    | ssh -i mykey.pem azureuser@<VM-IP>
+    |
+    v
+
+Internet / Private Network
+    |
+    v
+
+Azure VM
+    |
+    v
+
+SSH Service
+    |
+    v
+
+Find authorized public key
+    |
+    v
+
+Cryptographic verification
+    |
+    +---- Correct Private Key
+    |          |
+    |          v
+    |      LOGIN SUCCESS
+    |
+    +---- Wrong/No Private Key
+               |
+               v
+           LOGIN FAILED
+
+
+====================================================================
+27. SSH PRIVATE KEY SECURITY
+====================================================================
+
+Private Key is sensitive.
+
+Rules:
+
+- Do not share it.
+- Do not upload it publicly.
+- Do not commit it to GitHub.
+- Do not send it in chat/email without secure procedures.
+- Keep file permissions restricted.
+
+
+Example:
+
+chmod 400 mykey.pem
+
+
+or:
+
+chmod 600 mykey.pem
+
+
+Why?
+
+Because the private key is used as a credential to prove possession
+of the authorized key.
+
+
+Concept:
+
+Private Key
+=
+Digital credential
+
+
+If someone obtains your private key and can use it, they may be able to
+authenticate as you where that key is authorized.
+
+
+====================================================================
+28. SSH KEY vs PASSWORD
+====================================================================
+
+PASSWORD:
+
+Authentication based on:
+
+Username
++
+Password
+
+
+Concept:
+
+"I know the correct secret."
+
+
+SSH KEY:
+
+Authentication based on:
+
+Private Key
++
+Corresponding Public Key
+
+
+Concept:
+
+"I can cryptographically prove that I possess the private key
+corresponding to an authorized public key."
+
+
+Comparison:
+
+
+PASSWORD:
+
+Pros:
+- Easy to understand
+- Easy to use initially
+
+Considerations:
+- Can be targeted by password guessing/brute-force attacks
+- Requires strong password management
+
+
+SSH KEY:
+
+Pros:
+- Strong cryptographic authentication
+- No normal password needs to be sent for authentication
+- Common for Linux cloud environments
+- Useful for automation
+
+Considerations:
+- Private key must be protected
+- Losing the private key can create access/recovery challenges
+
+
+====================================================================
+29. COMPLETE VM CREATION FLOW
+====================================================================
+
+                     CREATE VM
+                         |
+        +----------------+----------------+
+        |                |                |
+        v                v                v
+
+      IMAGE            SIZE          AVAILABILITY
+        |                |                |
+        v                v                v
+
+ What VM starts    How powerful     How Azure places
+ with               VM is            VM for availability
+        |                |                |
+        |                |        +-------+-------+
+        |                |        |       |       |
+        |                |       None    Set    Zone
+        |                |
+        +----------------+
+                 |
+                 v
+
+              NETWORK
+
+VNet
+  |
+Subnet
+  |
+NIC
+  |
+Private IP
+  |
+Optional Public IP
+                 |
+                 v
+
+          AUTHENTICATION
+
+        +----------------+
+        |                |
+        v                v
+
+      SSH KEY         PASSWORD
+        |
+        v
+
+       VM READY
+
+
+====================================================================
+30. GOLDEN MEMORY SUMMARY
+====================================================================
+
+VM IMAGE
+=
+What the VM starts with.
+
+
+MARKETPLACE IMAGE
+=
+Ready-made image provided through Azure Marketplace/vendors.
+
+
+CUSTOM IMAGE
+=
+Our own reusable preconfigured VM template.
+
+
+VM SIZE
+=
+How much compute power the VM gets.
+
+
+B-SERIES
+=
+Burstable workloads.
+
+
+D-SERIES
+=
+General-purpose balanced workloads.
+
+
+NONE
+=
+No explicit Availability Set or Availability Zone placement.
+
+
+AVAILABILITY SET
+=
+Distributes VMs across Fault Domains and Update Domains.
+
+
+FAULT DOMAIN
+=
+Helps reduce impact of certain underlying infrastructure/hardware failures.
+
+
+UPDATE DOMAIN
+=
+Helps reduce downtime during planned maintenance.
+
+
+AVAILABILITY ZONE
+=
+Physically separated zone infrastructure within a supported Azure Region.
+
+
+PASSWORD
+=
+User proves identity by providing a valid password.
+
+
+SSH KEY
+=
+User proves possession of a private key corresponding to an authorized
+public key.
+
+
+PRIVATE KEY
+=
+Keep secret and secure.
+
+
+PUBLIC KEY
+=
+Stored/authorized on the VM.
+
+
+FINAL GOLDEN LINE:
+
+IMAGE decides WHAT the VM starts with.
+
+SIZE decides HOW POWERFUL the VM is.
+
+AVAILABILITY decides HOW Azure distributes the workload to reduce
+downtime risk.
+
+SSH KEY or PASSWORD decides HOW the user authenticates and accesses
+the VM.
+====================================================================

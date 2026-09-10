@@ -1,0 +1,49 @@
+Synchronization → Identity data cloud mein lana
+PHS → Entra ID password hash ke basis par authenticate karta hai
+PTA → On-prem AD password verify karta hai
+Federation → External/on-prem federation service authentication handle karti hai
+Health Monitoring → Pura sync setup healthy hai ya nahi check karna
+
+
+
+
+
+
+web proxy 
+            
+                   REMOTE USER
+            │
+            │ 1. Open app
+            ▼
+     ┌──────────────┐
+     │ Entra ID      │
+     │ Authentication│
+     └──────┬───────┘
+            │
+            │ 2. Token
+            ▼
+ ┌────────────────────────┐
+ │ Application Proxy      │
+ │ Service (Azure)        │
+ └───────────┬────────────┘
+             │
+             │ 3. Request
+             ▼
+ ┌────────────────────────┐
+ │ Application Proxy      │
+ │ Connector (On-Prem)    │
+ └───────────┬────────────┘
+             │
+             │ 4/5. Auth + Request
+             ▼
+ ┌────────────────────────┐
+ │ On-Prem Web Application │
+ └───────────┬────────────┘
+             │
+             │ 6. Response
+             ▼
+        Connector
+             ↓
+    Proxy Service
+             ↓
+           User

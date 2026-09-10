@@ -1,0 +1,345 @@
+========================================================================
+AZURE DEVOPS LEARNING JOURNEY - TOPIC SELECTION ROADMAP
+========================================================================
+Instructions for use:
+1. Pick ONE topic per day (or per session).
+2. Paste the topic block into AI chat as-is and ask:
+   "Explain [TOPIC NAME] - conceptually + practically + real-world use,
+   like I need to explain this confidently to my mentor."
+3. After learning, fill in the "MY NOTES" + "MENTOR Q&A PREP" section
+   yourself before your daily standup/report.
+4. Mark [ ] as [x] once topic is done.
+
+Status Key: [ ] Not started   [~] In progress   [x] Completed
+========================================================================
+
+
+########################################################################
+PHASE 2 - VMSS DEEP DIVE & COST GOVERNANCE (DO THIS PHASE FIRST)
+########################################################################
+
+------------------------------------------------------------------------
+SECTION A: VMSS AUTOSCALING
+------------------------------------------------------------------------
+
+[ ] TOPIC 2.1 - Metric-Based Autoscaling Rules
+    Concept angle : What is scale-out/scale-in, how Azure Monitor reads
+                    CPU/metric aggregation, why "Average CPU > 70% for
+                    5 min" is a threshold + time-window combo.
+    Practical angle: Configure autoscale rule in VMSS blade, set
+                    scale-out at CPU>70%, scale-in at CPU<30%,
+                    increase/decrease instance count by 1.
+    Real-use angle : Why production systems avoid single static
+                    thresholds (peak traffic vs idle cost).
+    Mentor Q prep  : "What happens if both scale-out and scale-in
+                    conditions are true simultaneously?"
+
+[ ] TOPIC 2.2 - Scale-In Policies (Default vs NewestVM vs OldestVM)
+    Concept angle : How Azure decides WHICH VM to kill when scaling in.
+    Practical angle: Change scale-in policy in VMSS settings, simulate
+                    with 3 VMs, force scale-in, observe which VM dies.
+    Real-use angle : Why "OldestVM" first is safer for stateful/long-
+                    running sessions vs "NewestVM" for fresh deployments.
+    Mentor Q prep  : "If a VM has an active WebSocket session, how do
+                    you protect it from termination?"
+
+[ ] TOPIC 2.3 - Cooldown Periods & Flapping Prevention
+    Concept angle : What is flapping (rapid scale in/out cycles), why
+                    cooldown timers exist, how they interact with
+                    evaluation windows.
+    Practical angle: Set 5-10 min cooldown, trigger repeated CPU spikes
+                    via stress-ng, observe no premature re-scaling.
+    Real-use angle : Cost impact of flapping (billing per VM-minute).
+    Mentor Q prep  : "What's the difference between cooldown period and
+                    the metric evaluation time window?"
+
+[ ] TOPIC 2.4 - Scheduled Scaling (Time-Based Profiles)
+    Concept angle : Difference between metric-based and schedule-based
+                    autoscale profiles; combining both.
+    Practical angle: Create a schedule profile - scale to 3 instances
+                    9AM-6PM, scale to 1 instance off-hours.
+    Real-use angle : Predictable business-hour traffic vs reactive
+                    scaling; cost savings during off-hours.
+    Mentor Q prep  : "How would you handle a holiday that breaks your
+                    normal weekday schedule?"
+
+------------------------------------------------------------------------
+SECTION B: MONITORING, METRICS & ALERTING
+------------------------------------------------------------------------
+
+[ ] TOPIC 2.5 - Azure Monitor Alert Rules (Threshold-Based)
+    Concept angle : Signal types (metric vs log vs activity log), alert
+                    rule anatomy: condition + evaluation frequency +
+                    severity.
+    Practical angle: Create alert on CPU%, memory, disk IOPS, network
+                    in/out for VMSS; test by generating load.
+    Real-use angle : Alert fatigue - why too many low-severity alerts
+                    are worse than none.
+    Mentor Q prep  : "What's the difference between alert 'evaluation
+                    frequency' and 'aggregation granularity'?"
+
+[ ] TOPIC 2.6 - Action Groups & Notification Routing
+    Concept angle : Action groups as reusable notification/automation
+                    bundles (email, SMS, webhook, runbook, Logic App).
+    Practical angle: Create action group -> attach to CPU alert ->
+                    trigger and confirm email/SMS received.
+    Real-use angle : Escalation chains in real incident response (on-
+                    call engineer -> team lead -> automation).
+    Mentor Q prep  : "How would you trigger an auto-remediation script
+                    instead of just a notification?"
+
+[ ] TOPIC 2.7 - Health Probes vs Application Health Extension
+    Concept angle : TCP/HTTP probe (Load Balancer level) vs Application
+                    Health Extension (VMSS-instance level, custom
+                    /healthz endpoint) - why they solve different
+                    problems.
+    Practical angle: Build a /healthz endpoint in Django/Nginx, install
+                    Application Health Extension, simulate app hang
+                    (process alive but app unresponsive) and observe
+                    detection difference vs simple TCP probe.
+    Real-use angle : Why "VM is up" != "App is healthy" - silent
+                    failures in production.
+    Mentor Q prep  : "Give an example where TCP probe passes but the
+                    app is actually broken."
+
+------------------------------------------------------------------------
+SECTION C: COST MANAGEMENT & STUDENT BUDGETING
+------------------------------------------------------------------------
+
+[ ] TOPIC 2.8 - Cost Alerts & Budget Thresholds
+    Concept angle : Azure Budgets vs Cost Alerts vs Anomaly alerts;
+                    how forecasted vs actual spend triggers differ.
+    Practical angle: Set budget at $100, configure alerts at 50/80/100%,
+                    simulate by checking current usage trend.
+    Real-use angle : Preventing surprise billing / quota lockout in
+                    real client subscriptions too, not just student.
+    Mentor Q prep  : "What's the difference between a 'forecasted'
+                    budget alert and an 'actual spend' alert?"
+
+[ ] TOPIC 2.9 - Cost Analysis Dashboard & Resource Breakdown
+    Concept angle : Cost Management + Billing blade, grouping by
+                    resource type/tag/resource group.
+    Practical angle: Break down spend across VMSS compute, NAT Gateway
+                    data processed, MySQL Flexible storage, Public IPs.
+    Real-use angle : Identifying the "silent cost killers" (NAT Gateway
+                    data processing charges are often underestimated).
+    Mentor Q prep  : "Which single resource in your setup is most
+                    likely to spike your bill unexpectedly, and why?"
+
+[ ] TOPIC 2.10 - Resource Deallocation Automation
+    Concept angle : Difference between "Stop" and "Stop (Deallocated)"
+                    for VMs; billing implications of each state.
+    Practical angle: Write an Azure Automation Runbook / Logic App /
+                    scheduled script to deallocate VMSS instances after
+                    hours automatically.
+    Real-use angle : Dev/test environment cost hygiene - a core FinOps
+                    practice in real companies.
+    Mentor Q prep  : "If a VM is 'Stopped' but not 'Deallocated', are
+                    you still being charged? Why?"
+
+
+########################################################################
+PHASE 3 - ADVANCED CLOUD & PRODUCTION READINESS
+########################################################################
+
+------------------------------------------------------------------------
+SECTION D: LAYER 7 TRAFFIC & SECURITY
+------------------------------------------------------------------------
+
+[ ] TOPIC 3.1 - Application Gateway Fundamentals
+    Concept angle : Layer 7 vs Layer 4 (why your current Public LB is
+                    L4 and this is different); Application Gateway
+                    components (listener, backend pool, HTTP settings,
+                    rules).
+    Practical angle: Deploy App Gateway in front of Web VMSS, replace
+                    or complement Public LB, test routing.
+    Real-use angle : When to use App Gateway vs Load Balancer vs both
+                    together.
+    Mentor Q prep  : "Why can't a Layer 4 Load Balancer do path-based
+                    routing?"
+
+[ ] TOPIC 3.2 - SSL/TLS Termination
+    Concept angle : Where termination happens (at gateway vs at VM),
+                    end-to-end SSL vs SSL offload, certificate binding.
+    Practical angle: Upload/generate a cert, bind to App Gateway
+                    listener, test HTTPS termination, forward HTTP to
+                    backend.
+    Real-use angle : Reducing CPU load on backend VMs by offloading
+                    encryption/decryption.
+    Mentor Q prep  : "What's the security trade-off of SSL offload vs
+                    end-to-end encryption?"
+
+[ ] TOPIC 3.3 - Web Application Firewall (WAF)
+    Concept angle : OWASP Core Rule Set, WAF modes (Detection vs
+                    Prevention), managed vs custom rules.
+    Practical angle: Enable WAF on App Gateway, test with a mock SQLi/
+                    XSS request, observe block/log behavior.
+    Real-use angle : Compliance requirement in most real production
+                    environments (PCI-DSS etc.).
+    Mentor Q prep  : "What's the risk of running WAF in Detection mode
+                    only, long-term?"
+
+[ ] TOPIC 3.4 - Path-Based Routing (/api vs /ws vs /)
+    Concept angle : URL path maps, multiple backend pools, routing
+                    rules priority.
+    Practical angle: Configure App Gateway to route /api and /ws to
+                    Backend VMSS (Daphne) and / to Web VMSS (Nginx).
+    Real-use angle : Microservice-style routing without separate
+                    domains; matches your Django Channels architecture.
+    Mentor Q prep  : "How does path-based routing interact with your
+                    existing Internal Load Balancer at 10.20.1.6:8000?"
+
+[ ] TOPIC 3.5 - Azure Front Door (Global Layer 7)
+    Concept angle : Difference between App Gateway (regional) and
+                    Front Door (global, CDN + WAF + routing).
+    Practical angle: (Conceptual/demo-tier) Set up Front Door profile,
+                    understand edge PoPs and origin groups.
+    Real-use angle : Multi-region failover and global latency
+                    reduction for production apps.
+    Mentor Q prep  : "Would Front Door make sense for a single-region
+                    student project? Why or why not?"
+
+------------------------------------------------------------------------
+SECTION E: SECRETS & IDENTITY
+------------------------------------------------------------------------
+
+[ ] TOPIC 3.6 - Azure Key Vault Fundamentals
+    Concept angle : Secrets vs Keys vs Certificates in Key Vault;
+                    access policies vs RBAC model.
+    Practical angle: Create Key Vault, store DB connection string as a
+                    secret, retrieve via CLI/SDK.
+    Real-use angle : Replacing /etc/chatapp.env plaintext secrets -
+                    direct upgrade to your current architecture.
+    Mentor Q prep  : "What's the difference between Key Vault access
+                    policies and Azure RBAC for Key Vault?"
+
+[ ] TOPIC 3.7 - Managed Identities (System vs User-Assigned)
+    Concept angle : What a managed identity is, difference between
+                    system-assigned (tied to one resource) and user-
+                    assigned (reusable across resources).
+    Practical angle: Enable system-assigned identity on Backend VMSS,
+                    grant Key Vault "Get Secret" RBAC role, fetch DB
+                    credentials at boot with no password anywhere.
+    Real-use angle : Eliminating hardcoded credentials entirely -
+                    zero-secret deployment pattern.
+    Mentor Q prep  : "If you scale out to 5 VMSS instances, does each
+                    one need its own identity setup?"
+
+------------------------------------------------------------------------
+SECTION F: CENTRALIZED LOGGING & OBSERVABILITY
+------------------------------------------------------------------------
+
+[ ] TOPIC 3.8 - Log Analytics Workspace Setup
+    Concept angle : What a workspace is, data ingestion from VMSS via
+                    Azure Monitor Agent, table schema basics.
+    Practical angle: Create workspace, onboard Web + Backend VMSS,
+                    confirm heartbeat/log ingestion.
+    Real-use angle : Single pane of glass for logs across 10s/100s of
+                    VMs instead of SSH-ing into each one.
+    Mentor Q prep  : "What's the cost model for Log Analytics data
+                    ingestion, and how do you control it?"
+
+[ ] TOPIC 3.9 - KQL (Kusto Query Language) Basics
+    Concept angle : Query structure (table | where | summarize |
+                    project), time-range filtering.
+    Practical angle: Write KQL to pull Nginx error logs, Daphne
+                    connection errors, and CPU spikes correlated with
+                    scale events.
+    Real-use angle : Real incident response - "show me all 5xx errors
+                    in the last 1 hour across all instances."
+    Mentor Q prep  : "Write a KQL query to find top 5 VMSS instances by
+                    error count in the last 24 hours."
+
+------------------------------------------------------------------------
+SECTION G: INFRASTRUCTURE AS CODE (IaC)
+------------------------------------------------------------------------
+
+[ ] TOPIC 3.10 - Bicep Fundamentals
+    Concept angle : Declarative vs imperative (Portal clicks) infra;
+                    Bicep vs ARM templates vs Terraform positioning.
+    Practical angle: Write a Bicep file for just the VNet + Subnets,
+                    deploy via `az deployment group create`.
+    Real-use angle : Version-controlled infra = reproducible
+                    environments, disaster recovery in minutes.
+    Mentor Q prep  : "Why is Bicep called 'declarative' and why does
+                    that matter for idempotent deployments?"
+
+[ ] TOPIC 3.11 - Full Stack IaC (VNet + VMSS + NAT + DB)
+    Concept angle : Modules in Bicep, parameter files, dependency
+                    ordering between resources.
+    Practical angle: Extend Bicep template to include NSGs, NAT
+                    Gateway, VMSS, and MySQL Flexible Server; deploy
+                    entire Phase 1 architecture from one command.
+    Real-use angle : "5-minute redeploy" capability - core DevOps
+                    resilience skill.
+    Mentor Q prep  : "How do you handle secrets (like DB passwords)
+                    inside a Bicep template safely?"
+
+[ ] TOPIC 3.12 - Terraform (Alternative/Comparison)
+    Concept angle : State file concept, providers, why Terraform is
+                    multi-cloud vs Bicep being Azure-only.
+    Practical angle: Rewrite one small resource (e.g., NSG) in
+                    Terraform, run plan/apply, inspect state file.
+    Real-use angle : Why many companies pick Terraform for multi-cloud
+                    consistency despite Bicep being "native."
+    Mentor Q prep  : "What problem does Terraform's state file solve,
+                    and what breaks if it gets corrupted?"
+
+------------------------------------------------------------------------
+SECTION H: CI/CD INTEGRATION
+------------------------------------------------------------------------
+
+[ ] TOPIC 3.13 - GitHub Actions Basics
+    Concept angle : Workflow YAML anatomy (triggers, jobs, steps),
+                    secrets storage in GitHub.
+    Practical angle: Create a workflow that runs on push to main,
+                    builds/tests the Django app.
+    Real-use angle : Foundation for any automated deployment pipeline.
+    Mentor Q prep  : "How do you securely pass your Azure credentials
+                    into a GitHub Actions workflow?"
+
+[ ] TOPIC 3.14 - CD to VMSS on Git Commit
+    Concept angle : Custom Script Extension vs deployment scripts vs
+                    image update + rolling upgrade policy on VMSS.
+    Practical angle: Build a pipeline step that updates VMSS instances
+                    with new code automatically after merge to main.
+    Real-use angle : Zero manual SSH deployment - matches your stated
+                    goal exactly.
+    Mentor Q prep  : "What's a 'rolling upgrade policy' on VMSS and why
+                    does it matter during a live deployment?"
+
+
+########################################################################
+PHASE 4 - HANDS-ON MILESTONES (INTEGRATION CHECKPOINTS)
+########################################################################
+
+[ ] MILESTONE 4.1 - Stress Test & Autoscale Validation
+    Task: Run stress-ng on Backend VMSS, observe scale-out to 2-3 VMs,
+          confirm Cost + CPU alert rules fire correctly.
+    Deliverable to mentor: Screenshot/log of scale-out event + alert
+          notification received.
+
+[ ] MILESTONE 4.2 - Key Vault & Managed Identity Migration
+    Task: Fully remove raw DB password from /etc/chatapp.env; VMSS
+          reads credentials dynamically via Managed Identity + Key
+          Vault at runtime.
+    Deliverable to mentor: Before/after config diff + demo of app
+          still working with zero plaintext secrets.
+
+[ ] MILESTONE 4.3 - App Gateway & IaC Rollout
+    Task: Terminate SSL at Application Gateway; redeploy entire infra
+          stack using a single Bicep script from scratch.
+    Deliverable to mentor: Live redeploy demo timed end-to-end.
+
+
+========================================================================
+DAILY REPORT TEMPLATE (fill this after each topic)
+========================================================================
+Date little      : ___________
+Topic covered    : ___________
+What it is (1-2 lines, concept)      : ___________
+Why it matters (real-world use)      : ___________
+What I did hands-on                  : ___________
+One question mentor might ask + my answer : ___________
+Blocker/confusion (if any)           : ___________
+========================================================================

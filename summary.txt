@@ -1,0 +1,710 @@
+Azure 3-Tier Django Chat App – Project Progress Summary
+
+ASSIGNMENT GOAL
+Deploy a 3-tier Django Chat Application on Azure manually to practice Resource Group, VNet, CIDR, subnets, route tables, NAT Gateway, VMs, NICs, Public IPs, ASGs, NSGs, SSH/Jump Host, MySQL, Python versions, Django, Nginx, and end-to-end connectivity.
+
+CURRENT REGION
+Resource Group: Central India
+VNet and actual Azure resources: East Asia
+
+==================================================
+
+RESOURCE GROUP – COMPLETED
+==================================================
+
+Resource Group:
+rg-3tier-chatapp
+
+==================================================
+2. VNET + CIDR + SUBNETS – COMPLETED
+
+VNet:
+vnet-3tier-chatapp
+CIDR:
+10.0.0.0/22
+
+Subnets:
+
+snet-web-public-1
+10.0.0.0/24
+snet-web-public-2
+10.0.1.0/24
+snet-app-private-1
+10.0.2.0/24
+snet-db-private-2
+10.0.3.0/24
+
+Reasoning:
+
+/22 = 1024 total addresses
+Divided into four /24 subnets
+Each /24 = 256 total addresses
+Azure reserves 5 IPs per subnet
+/22 was selected because it is sufficient for this exercise without being excessively large like /16
+==================================================
+3. ROUTE TABLES – COMPLETED
+
+Created:
+
+rt-public
+Associated with:
+
+snet-web-public-1
+snet-web-public-2
+
+rt-private
+Associated with:
+
+snet-app-private-1
+snet-db-private-2
+
+No custom routes were added because Azure system routes already provide VNet/internal routing and default Internet routing.
+
+Concepts understood:
+
+System routes
+0.0.0.0/0 -> Internet
+Longest prefix match
+Route table is associated with subnet
+NAT Gateway is NOT configured as a route-table next hop
+Route tables decide where traffic goes
+NSGs decide whether traffic is allowed/denied
+==================================================
+4. NAT GATEWAY – COMPLETED
+
+NAT Gateway:
+nat-3tier-chatapp
+
+Public IP:
+pip-nat-gateway
+
+Public IP SKU:
+StandardV2
+Assignment:
+Static
+
+Associated with:
+
+snet-app-private-1
+snet-db-private-2
+
+Purpose:
+Private VMs can initiate outbound Internet traffic without Public IPs.
+
+Flow:
+Private VM -> Private Subnet -> NAT Gateway -> NAT Public IP -> Internet
+
+Concept:
+NAT Gateway is for outbound Internet access.
+It is associated directly with subnet.
+It is not a replacement for a route table or VPN Gateway.
+
+==================================================
+5. VIRTUAL MACHINES – COMPLETED
+
+WEB VM
+
+Name:
+vm-web
+
+Subnet:
+snet-web-public-1
+
+Private IP:
+10.0.0.4
+
+Public IP:
+Yes
+
+OS:
+Ubuntu Server 22.04 LTS x64 Gen 2
+
+Role:
+Nginx / Web Tier / temporary Jump Host
+
+BACKEND VM
+
+Name:
+vm-backend
+
+Subnet:
+snet-app-private-1
+
+Private IP:
+10.0.2.4
+
+Public IP:
+No
+
+OS:
+Ubuntu Server 22.04 LTS x64 Gen 2
+
+Role:
+Django Application
+
+DATABASE VM
+
+Name:
+vm-db
+
+Subnet:
+snet-db-private-2
+
+Private IP:
+10.0.3.4
+
+Public IP:
+No
+
+OS:
+Ubuntu Server 22.04 LTS x64 Gen 2
+
+Role:
+MySQL Database
+
+VM networking concept understood:
+VM -> NIC -> Private IP/Public IP -> Subnet -> VNet
+
+==================================================
+6. SSH / JUMP HOST – COMPLETED
+
+Web VM has Public IP.
+Backend and DB have no Public IP.
+
+Implemented access:
+
+Laptop
+->
+Web VM Public IP
+->
+Web VM / Jump Host
+->
+Backend private IP 10.0.2.4
+OR
+->
+DB private IP 10.0.3.4
+
+Three private keys exist on Mac:
+
+web-key.pem
+backend-key.pem
+db-key.pem
+
+SSH agent forwarding was used.
+
+Important commands:
+
+ssh-add /path/to/backend-key.pem
+ssh-add /path/to/db-key.pem
+ssh-add -l
+
+Connect to Web:
+
+ssh -A -i /path/to/web-key.pem azureuser@<WEB_PUBLIC_IP>
+
+From Web:
+
+ssh azureuser@10.0.2.4
+ssh azureuser@10.0.3.4
+
+Concept understood:
+
+-A = SSH agent forwarding
+Private keys stay on Mac
+Private keys are not copied to Web
+Jump Host is for inbound administrative access
+NAT Gateway is for outbound Internet access
+==================================================
+7. APPLICATION SECURITY GROUPS – COMPLETED
+
+Created:
+
+asg-web
+asg-app
+asg-db
+
+NIC associations:
+
+vm-web NIC -> asg-web
+vm-backend NIC -> asg-app
+vm-db NIC -> asg-db
+
+Concept:
+ASG logically groups NICs and can be used as source/destination in NSG rules.
+
+ASG != security rule
+NSG controls traffic.
+
+==================================================
+8. NETWORK SECURITY GROUPS – COMPLETED
+
+Automatically created VM NSGs were deleted.
+
+Final design uses subnet-level NSGs.
+
+Subnet -> NSG
+NIC -> ASG
+
+NSG-WEB
+
+Associated with:
+snet-web-public-1
+
+Inbound rules:
+Internet -> asg-web : TCP 80 -> ALLOW
+Your IP -> asg-web : TCP 22 -> ALLOW
+
+Outbound rule:
+asg-web -> asg-app : TCP 8000 -> ALLOW
+
+8000 is currently assumed as Django internal application port.
+It can be edited later if application uses another port.
+
+NSG-APP
+
+Associated with:
+snet-app-private-1
+
+Inbound:
+asg-web -> asg-app : TCP 8000 -> ALLOW
+asg-web -> asg-app : TCP 22 -> ALLOW
+Internet -> asg-app : ANY -> DENY (priority 400)
+
+Outbound:
+asg-app -> asg-db : TCP 3306 -> ALLOW
+
+NSG-DB
+
+Associated with:
+snet-db-private-2
+
+Inbound:
+asg-app -> asg-db : TCP 3306 -> ALLOW
+asg-web -> asg-db : TCP 22 -> ALLOW
+asg-web -> asg-db : TCP 3306 -> DENY
+Internet -> asg-db : ANY -> DENY
+
+Reason Web -> DB TCP 22 is allowed:
+Web is being used as temporary jump host for administration.
+
+Reason Web -> DB TCP 3306 is denied:
+Web must not directly access MySQL.
+Only App tier can access MySQL.
+
+Important concept:
+NSG rules are port/protocol-specific.
+
+Therefore:
+asg-web -> asg-db : 22 = ALLOW
+asg-web -> asg-db : 3306 = DENY
+
+These are not contradictory.
+
+==================================================
+9. NETWORKING / SECURITY VERIFICATION – COMPLETED
+
+Web can SSH to DB:
+ssh azureuser@10.0.3.4
+
+Web can SSH to Backend when correct SSH authentication/agent is available.
+
+Backend -> DB MySQL connectivity has been successfully verified.
+
+Important distinction learned:
+If SSH returns:
+Permission denied (publickey)
+then network path may already be working; SSH authentication is failing.
+
+NSG controls network access.
+SSH key controls authentication.
+
+==================================================
+10. MYSQL DATABASE SERVER – COMPLETED
+
+On vm-db:
+
+MySQL Server installed.
+
+MySQL service running using systemd.
+
+Initially MySQL listened only on:
+127.0.0.1:3306
+
+This was changed so MySQL also listens on:
+0.0.0.0:3306
+
+MySQL configuration was modified and service restarted.
+
+Current important state:
+0.0.0.0:3306 is listening.
+
+Database created:
+chatapp
+
+Application user created:
+chatapp_user@10.0.2.4
+
+Privileges granted on:
+chatapp.*
+
+Root user is NOT being used by Django.
+
+==================================================
+11. BACKEND -> MYSQL TEST – COMPLETED
+
+From Backend VM:
+
+mysql -h 10.0.3.4 -u chatapp_user -p chatapp
+
+Connection succeeded.
+
+SQL:
+
+SELECT DATABASE();
+
+Returned:
+chatapp
+
+Therefore this path is proven:
+
+Backend 10.0.2.4
+->
+TCP 3306
+->
+NSG rules
+->
+DB 10.0.3.4
+->
+MySQL
+->
+chatapp database
+
+==================================================
+12. PYTHON VERSION – PARTIALLY COMPLETED
+
+Backend VM is Ubuntu 22.04.
+
+Default Python was verified:
+python3 -> Python 3.10.x
+
+Application requirement:
+Python 3.8
+
+Important decision:
+Do NOT replace Ubuntu system Python 3.10.
+
+Need to install Python 3.8 alongside 3.10 and create the application virtual environment using Python 3.8.
+
+Desired architecture:
+
+Python 3.10
++
+Python 3.8
+->
+Python 3.8 virtual environment
+->
+Django application
+
+We discussed using deadsnakes PPA for Python 3.8.
+
+==================================================
+13. REQUIREMENTS.TXT – PROVIDED BY USER
+
+The application requirements are:
+
+aioredis==2.0.1
+asgiref==3.7.2
+attrs==22.2.0
+autobahn==23.1.2
+certifi==2023.11.17
+cffi==1.15.1
+channels==4.0.0
+channels-redis==4.0.0
+cryptography==41.0.3
+daphne==4.0.0
+defusedxml==0.7.1
+Django==4.2.8
+django-allauth==0.54.0
+django-rest-auth==0.9.5
+djangorestframework==3.14.0
+drf-extensions==0.7.0
+gunicorn==20.1.0
+hiredis==2.0.0
+oauthlib==3.2.2
+psycopg2-binary==2.9.8
+PyJWT==2.8.0
+pytz==2023.3
+redis==5.0.0
+requests==2.31.0
+requests-oauthlib==1.3.1
+six==1.16.0
+tqdm==4.66.1
+websockets==11.0.3
+
+Important observations:
+
+channels
+channels-redis
+daphne
+websockets
+redis
+aioredis
+
+This strongly indicates WebSocket/Channels support.
+
+Likely production application path:
+Nginx -> Daphne/ASGI -> Django/Channels
+
+Gunicorn is present but may not be the correct server for the WebSocket portion.
+
+IMPORTANT DATABASE MISMATCH:
+requirements.txt contains:
+psycopg2-binary
+
+That is PostgreSQL driver.
+
+Assignment requires MySQL.
+
+requirements.txt does NOT contain:
+mysqlclient
+or
+PyMySQL
+
+Therefore DO NOT blindly run:
+pip install -r requirements.txt
+
+until Django project configuration is inspected.
+
+Need to inspect settings.py and ASGI configuration before dependency installation.
+
+==================================================
+14. CURRENT EXACT POSITION
+
+Everything through:
+
+Networking
+NAT
+VMs
+Jump Host
+ASGs
+NSGs
+MySQL
+Backend -> DB connectivity
+
+is COMPLETE.
+
+Current work starts from application environment setup, around Phase 10.3/10.4.
+
+NEXT IMMEDIATE TASKS:
+
+On Backend VM:
+
+cd ~/chatapp
+
+python3.8 -m venv venv
+
+source ~/chatapp/venv/bin/activate
+
+python --version
+
+which python
+
+python -m pip install --upgrade pip
+
+Expected:
+python --version -> Python 3.8.x
+which python -> /home/azureuser/chatapp/venv/bin/python
+
+==================================================
+15. DJANGO PROJECT FILES – PENDING
+
+Need to place actual Django project in:
+
+~/chatapp/
+
+Expected structure:
+
+~/chatapp/
+venv/
+manage.py
+requirements.txt
+<django-project-directory>/
+
+Do NOT put the project inside venv.
+
+Once project is available:
+
+find . -name "settings.py"
+
+Find and inspect DATABASES configuration.
+
+Also:
+
+find . -name "asgi.py" -o -name "routing.py" -o -name "consumers.py"
+
+Inspect asgi.py to confirm Channels/WebSocket architecture.
+
+==================================================
+16. DJANGO DATABASE CONFIGURATION – PENDING
+
+Eventually Django must connect to:
+
+DB Host:
+10.0.3.4
+
+DB Port:
+3306
+
+Database:
+chatapp
+
+User:
+chatapp_user
+
+Password:
+the password created on DB VM
+
+Need to inspect current settings.py before deciding how to modify it because requirements.txt contains PostgreSQL driver.
+
+==================================================
+17. DJANGO DEPLOYMENT – PENDING
+
+After inspecting project:
+
+Resolve MySQL vs PostgreSQL dependency/configuration.
+Install appropriate dependencies in Python 3.8 venv.
+Configure Django database settings.
+Run:
+
+python manage.py check
+
+Run:
+
+python manage.py migrate
+
+Verify Django can communicate with MySQL.
+Confirm Channels/ASGI setup.
+Run application using appropriate ASGI server, likely Daphne.
+Determine actual internal application port, currently planned as 8000 but must verify.
+Test Web -> Backend.
+Configure Nginx on Web VM.
+Configure reverse proxy from Nginx to Backend private IP.
+Configure static/media handling if needed.
+Test browser -> Web Public IP.
+Send chat message.
+Query MySQL directly to verify persistence.
+==================================================
+18. FINAL EXPECTED ARCHITECTURE
+
+Browser
+->
+Web Public IP
+->
+Web VM 10.0.0.4
+->
+Nginx
+->
+Backend 10.0.2.4
+->
+Daphne / Django / Channels
+->
+DB 10.0.3.4:3306
+->
+MySQL
+->
+chatapp
+
+Private outbound:
+Backend/DB
+->
+Private subnet
+->
+NAT Gateway
+->
+StandardV2 Public IP
+->
+Internet
+
+Admin access:
+Laptop
+->
+Web Public IP
+->
+Web VM / Jump Host
+->
+Backend/DB private IP
+
+==================================================
+19. IMPORTANT CONCEPTS ALREADY UNDERSTOOD
+Resource Group vs VNet
+VNet CIDR
+/22 -> four /24 subnets
+Azure reserved 5 IPs per subnet
+Public vs private architecture
+Subnet segmentation
+System routes
+Custom route tables
+Longest prefix match
+NAT Gateway vs Route Table
+NAT Gateway subnet association
+VM -> NIC -> IP -> Subnet -> VNet
+Public IP vs private IP
+Jump Host
+SSH agent forwarding
+ASG vs NSG
+ASG is attached to NIC
+NSG can be associated with subnet/NIC
+NSG priority
+Inbound vs outbound rules
+Port-based security
+Explicit deny
+Web -> App -> DB architecture
+Web -> DB SSH allowed but Web -> DB MySQL denied
+NSG vs SSH authentication
+MySQL bind-address
+MySQL private access
+Dedicated MySQL application user
+MySQL least privilege
+Backend -> DB network verification
+System Python vs application Python
+Multiple Python versions
+Python 3.8 virtual environment
+Django Channels/WebSockets
+Daphne/ASGI vs Gunicorn/WSGI
+==================================================
+CURRENT STOPPING POINT
+
+DO NOT redo:
+Resource Group
+VNet
+Subnets
+Route Tables
+NAT Gateway
+VMs
+ASGs
+NSGs
+Jump Host
+MySQL
+Backend -> DB connectivity
+
+These are already completed.
+
+RESUME FROM:
+Python 3.8 virtual environment + Django project setup.
+
+First practical commands:
+
+cd ~/chatapp
+python3.8 -m venv venv
+source ~/chatapp/venv/bin/activate
+python --version
+which python
+
+Then inspect the actual Django project, especially:
+settings.py
+DATABASES
+asgi.py
+routing.py
+consumers.py
+
+Do not blindly install requirements.txt until the PostgreSQL/MySQL mismatch is resolved.

@@ -1,0 +1,235 @@
+STEP 1
+================================================
+
+ssh -i milanvm.pem azureuser@20.100.10.5
+
+
+STEP 2
+================================================
+
+Destination:
+
+20.100.10.5:22
+
+
+STEP 3
+================================================
+
+Routing
+
+Laptop
+   |
+Default Gateway
+   |
+Home Router
+   |
+ISP / Internet
+   |
+Microsoft Network
+   |
+Azure Public IP
+   |
+VM
+
+
+STEP 4
+================================================
+
+TCP 3-Way Handshake
+
+SYN
+SYN-ACK
+ACK
+
+
+TCP connection established.
+
+
+STEP 5
+================================================
+
+SSH Handshake
+
+Client and Server negotiate:
+
+- Key Exchange Algorithm
+- Encryption Cipher
+- Integrity mechanism
+- Host key/signature algorithm
+
+
+STEP 6
+================================================
+
+Key Exchange
+
+Client + Server
+        |
+        v
+Shared secret established
+        |
+        v
+Session keys derived
+
+
+STEP 7
+================================================
+
+Encrypted SSH channel established.
+
+
+STEP 8
+================================================
+
+Server Authentication
+
+Server proves:
+
+"I am the expected server."
+
+Client checks server host identity.
+
+
+STEP 9
+================================================
+
+User Authentication
+
+User:
+
+azureuser
+
+
+Authentication:
+
+Password
+
+OR
+
+SSH Key
+
+
+STEP 10 - SSH KEY AUTHENTICATION
+================================================
+
+Your Laptop:
+
+Private Key
+milanvm.pem
+
+
+Azure VM:
+
+Public Key
+
+/home/azureuser/.ssh/authorized_keys
+
+
+Client:
+
+Uses private key to create cryptographic proof/signature.
+
+
+Server:
+
+Uses public key to verify the proof.
+
+
+If valid:
+
+LOGIN SUCCESS
+
+
+STEP 11
+================================================
+
+SSH Session
+
+Your Laptop
+     |
+     | Encrypted SSH connection
+     |
+     v
+Remote Shell on Azure VM
+
+
+
+
+
+
+
+
+
+cloud init-
+- Create users
+- Configure SSH keys
+- Set hostname
+- Install packages
+- Write files
+- Run commands
+- Configure services
+
+
+
+
+CUSTOM DATA
+     =
+What configuration/instructions you provide
+
+
+cloud-init
+     =
+The initialization mechanism inside Linux that processes supported
+cloud-init configuration and performs actions.   Create users
+                                                - Configure SSH keys
+                                                - Set hostname
+                                                - Install packages
+                                                - Write files
+                                                - Run commands
+                                                - Configure services
+
+
+                                                Azure Infrastructure
+Azure Infrastructure
+       VM
+        |
+        v
+Linux Operating System
+        |
+        v
+cloud-init
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+VM: Web-VM
+
+        |
+        v
+
+NIC: webvm-nic
+        |
+        +---- Private IP: 10.0.1.4
+        |
+        +---- Public IP: 20.x.x.x
+        |
+        +---- MAC Address
+        |
+        +---- Connected to:
+              Web-Subnet

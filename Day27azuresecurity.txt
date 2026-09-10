@@ -1,0 +1,293 @@
+========================================================================
+AZURE SECURITY - SIMPLE HINGLISH LEARNING PLAN (Beginner-Friendly)
+========================================================================
+KAISE USE KARNA HAI:
+1. Neeche har topic ke saath ek "PROMPT TO PASTE" diya hai - use as-it-is
+   copy karke AI (Claude/ChatGPT) mein paste karo.
+2. Yeh prompt AI ko force karega ki wo Hinglish mein, bina heavy jargon
+   ke, real-life example se samjhaye - jaise koi dost samjha raha ho.
+3. Agar AI phir bhi hard word bole, seedha bol do:
+   "isko ek chhoti kahani ya ghar/office ke example se samjhao, jargon
+   mat use karo"
+4. Samajh aane ke baad "MERA EXAMPLE" wale box mein apne alfaz mein
+   likho ki tumne kya samjha - yeh mentor ko explain karne mein help
+   karega.
+
+Status: [ ] Nahi kiya   [~] Chal raha hai   [x] Ho gaya
+========================================================================
+
+
+########################################################################
+SECTION A: IDENTITY BASICS (Kaun ho tum, cloud ko kaise pata chalta hai)
+########################################################################
+
+[ ] TOPIC A.1 - Azure AD / Entra ID kya hai
+    Isko aise socho: Jaise ek building ka main gate + security guard
+    ka register - jo bhi andar aana chahta hai, pehle wahan apni
+    ID dikhata hai.
+    PROMPT TO PASTE:
+    "Azure AD (Entra ID) kya hota hai, mujhe Hinglish mein, kisi office
+    building ke security guard/gate ke example se samjhao. Bina cloud
+    jargon use kiye batao ye asal mein karta kya hai aur agar ye na ho
+    toh kya problem hoti."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC A.2 - Users & Groups
+    Isko aise socho: Jaise ek company mein alag-alag department (HR,
+    Sales, IT) - har department ko sirf apne kaam ka access milta hai,
+    poori company ka nahi.
+    PROMPT TO PASTE:
+    "Azure mein Users aur Groups ka concept ek office ke departments
+    (jaise HR, Sales) ke example se Hinglish mein samjhao - group ko
+    access dena vs har banda ko alag-alag access dena, kaunsa better
+    hai aur kyun, real example ke saath."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC A.3 - RBAC (Kisko kya karne diya jaye)
+    Isko aise socho: Jaise ghar mein - beta ghar ki chaabi le sakta hai
+    lekin locker ki chaabi sirf papa ke paas hai. Sabko sab kuch access
+    nahi milta.
+    PROMPT TO PASTE:
+    "RBAC (Role Based Access Control) Azure mein kya hota hai, mujhe
+    ghar ki chaabiyon (main door vs almirah/locker) ke example se
+    Hinglish mein samjhao. Real scenario do - jaise ek naya developer
+    join karta hai, use kya access milna chahiye aur kya nahi, aur
+    kyun."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC A.4 - Management Groups (Bade level pe control)
+    Isko aise socho: Jaise ek company ke multiple branches (Delhi,
+    Mumbai) hain, aur head office ek hi rule sabpe apply karna chahta
+    hai bina har branch mein jaake alag-alag set karne ke.
+    PROMPT TO PASTE:
+    "Management Groups Azure mein kis kaam aate hain, mujhe company ke
+    multiple branch offices ke example se Hinglish mein samjhao - jab
+    ek rule sabhi branches pe ek saath lagana ho toh."
+    MERA EXAMPLE: ___________
+
+
+########################################################################
+SECTION B: MFA & ADVANCED LOGIN SECURITY
+########################################################################
+
+[ ] TOPIC B.1 - MFA (Multi-Factor Authentication)
+    Isko aise socho: Jaise ATM se paisa nikalne ke liye card bhi
+    chahiye AUR PIN bhi - sirf card se nahi chalega. Do cheezein
+    chahiye, ek nahi.
+    PROMPT TO PASTE:
+    "MFA (Multi-Factor Authentication) kya hota hai, ATM card + PIN ke
+    example se Hinglish mein samjhao. Fir batao ki sirf password
+    (jaise sirf card) kyun safe nahi hai, real hacking scenario ke
+    saath."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC B.2 - Conditional Access (Smart MFA)
+    Isko aise socho: Jaise ghar ka guard - agar tum roz wahi gaadi se
+    aate ho toh seedha andar jaane deta hai, lekin agar koi naya
+    vehicle ya raat ko koi aaya toh extra checking karta hai.
+    PROMPT TO PASTE:
+    "Conditional Access Azure mein kya hota hai, ek society ke guard
+    ke example se Hinglish mein samjhao jo jaani-pehchani gaadi ko
+    aasani se jaane deta hai lekin naye/unknown vehicle ko rok ke check
+    karta hai. Real scenario batao ki company isse kaise use karti hai."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC B.3 - PIM (Privileged Identity Management) - Temporary Power
+    Isko aise socho: Jaise office mein ek master key hoti hai jo
+    normally locker mein band rehti hai, aur jab kisi ko zarurat ho
+    toh 1 ghante ke liye request karke leni padti hai, hamesha ke liye
+    apne paas nahi rakhte.
+    PROMPT TO PASTE:
+    "PIM (Privileged Identity Management) kya hota hai, ek 'master key
+    jo locker mein band rehti hai aur zarurat pe temporary nikalte hain'
+    is example se Hinglish mein samjhao. Batao kyun hamesha ke liye
+    admin access dena risky hota hai."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC B.4 - Login Logs / Suspicious Activity
+    Isko aise socho: Jaise society ke gate pe CCTV camera + register
+    hota hai - kaun kab aaya, kaha se aaya, sab record hota hai. Agar
+    koi ajeeb pattern dikhe (raat 3 baje koi anjaan aadmi) toh alert
+    milta hai.
+    PROMPT TO PASTE:
+    "Azure AD sign-in logs aur risky login detection kya hote hain,
+    CCTV camera + gate register ke example se Hinglish mein samjhao.
+    Real scenario do - agar ek user ka account 10 min mein 5 alag
+    countries se login ho raha hai, iska matlab kya hai aur kya karna
+    chahiye."
+    MERA EXAMPLE: ___________
+
+
+########################################################################
+SECTION C: SECRETS, KEYS AUR CERTIFICATES
+########################################################################
+
+[ ] TOPIC C.1 - Azure Key Vault (Tijori/Locker)
+    Isko aise socho: Jaise ghar mein saara cash/gold table pe khula
+    nahi rakhte, ek tijori (locker) mein rakhte hain jiski chaabi sirf
+    trusted logo ke paas hoti hai.
+    PROMPT TO PASTE:
+    "Azure Key Vault kya hota hai, ghar ki tijori (locker) ke example
+    se Hinglish mein samjhao - Secrets, Keys aur Certificates teeno
+    alag-alag cheez hain, inka simple real-life example do (jaise
+    tijori mein cash, gehna, aur important papers alag rakhte hain)."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC C.2 - Access Policy vs RBAC for Key Vault
+    Isko aise socho: Purana tarika tha - tijori ki apni alag list
+    hoti thi ki kaun khol sakta hai. Naya tarika hai - poore ghar ka
+    ek hi access system hai jo tijori pe bhi lagta hai, alag se list
+    nahi banani padti.
+    PROMPT TO PASTE:
+    "Key Vault mein 'Access Policy' vs 'RBAC' - dono mein kya farak
+    hai, Hinglish mein ek simple example se samjhao (jaise tijori ka
+    apna alag lock system vs poore ghar ka ek hi security system)."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC C.3 - Certificate Expiry (Documents ki expiry date)
+    Isko aise socho: Jaise passport ya driving license ki expiry date
+    hoti hai - agar time pe renew nahi kiya toh airport pe ya check
+    naka pe problem hoti hai.
+    PROMPT TO PASTE:
+    "SSL Certificate expiry Azure mein problem kyun banti hai, isko
+    passport/driving license expiry ke example se Hinglish mein
+    samjhao. Batao real company mein iske wajah se site down ho jaye
+    toh kya hota hai aur kaise bachne ka system hai."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC C.4 - Managed Identity (Bina password ke pehchaan)
+    Isko aise socho: Jaise office ke employee ka face-recognition ID
+    hota hai - use password yaad rakhne ki zarurat nahi, uska chehra
+    hi uski pehchaan hai. VM bhi apna "chehra" dikhake seedha tijori
+    khol sakti hai, password type kiye bina.
+    PROMPT TO PASTE:
+    "Managed Identity Azure mein kya hoti hai, office ke face-
+    recognition ID card ke example se Hinglish mein samjhao - kaise ek
+    VM (server) bina password likhe/store kiye Key Vault se secret le
+    sakti hai. Real problem batao jo isse solve hoti hai."
+    MERA EXAMPLE: ___________
+
+
+########################################################################
+SECTION D: NETWORK SECURITY (Bastion aur WAF)
+########################################################################
+
+[ ] TOPIC D.1 - Azure Bastion (Bina main gate khole andar jaana)
+    Isko aise socho: Jaise kisi building mein andar jaane ke liye
+    normally seedha bahar se gate khula rehta tha (jisse koi bhi try
+    kar sakta tha), ab ek reception counter se hokar jaana padta hai
+    jo verify karke hi andar bhejta hai - bahar se seedha koi nahi aa
+    sakta.
+    PROMPT TO PASTE:
+    "Azure Bastion kya hota hai, ek building ke 'seedha gate' vs
+    'reception se hoke jaana' ke example se Hinglish mein samjhao.
+    Batao kyun VM ka SSH/RDP port seedha internet ke liye khula rakhna
+    risky hai, aur Bastion isse kaise solve karta hai."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC D.2 - JIT (Just-In-Time) Access - Temporary Gate Opening
+    Isko aise socho: Jaise ghar ka main gate normally band rehta hai,
+    lekin jab courier wala aata hai toh 5 min ke liye khol dete ho,
+    fir wapas band kar dete ho.
+    PROMPT TO PASTE:
+    "JIT (Just-In-Time) VM Access kya hota hai, 'courier ke liye 5 min
+    gate kholna fir band karna' ke example se Hinglish mein samjhao.
+    Yeh Bastion se kaise alag hai, simple words mein batao."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC D.3 - WAF (Web Application Firewall) - Smart Security Guard
+    Isko aise socho: Jaise mall ke gate pe ek smart guard hota hai jo
+    bag check karta hai - agar koi bomb ya weapon jaisi cheez dikhe
+    toh andar nahi jaane deta, normal saman wale ko jaane deta hai.
+    PROMPT TO PASTE:
+    "WAF (Web Application Firewall) kya hota hai, mall ke security
+    check/bag-scanning guard ke example se Hinglish mein samjhao.
+    Real scenario do - jaise koi hacker fake/malicious request bhejta
+    hai website ko, WAF use kaise pakadta hai."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC D.4 - Sab Security Layers Ek Saath (Full Picture)
+    Isko aise socho: Jaise ek society mein - bahar wala gate guard
+    (WAF), phir andar building ka guard (NSG), phir har flat ka lock
+    (RBAC), phir tijori ka lock (Key Vault) - attacker ko sab layers
+    cross karni padti hai, ek layer todne se kaam nahi chalta.
+    PROMPT TO PASTE:
+    "Mera poora Azure setup hai (VMSS, NSG, NAT Gateway, Load Balancer)
+    - ab isme WAF, Bastion, Key Vault add karna hai. Society ke
+    multiple security layers (society gate, building guard, flat lock,
+    ghar ki tijori) ke example se Hinglish mein samjhao ki har layer
+    kis type ke attacker/problem ko rokti hai."
+    MERA EXAMPLE: ___________
+
+
+########################################################################
+SECTION E: EXTRA - JO LOG SKIP KARTE HAIN (Senior log yeh jarur puchte)
+########################################################################
+
+[ ] TOPIC E.1 - Defender for Cloud (Health Checkup Report)
+    Isko aise socho: Jaise ek doctor tumhara full body checkup karke
+    report deta hai - "yeh weak hai, isko improve karo" - waise hi yeh
+    tool tumhare Azure setup ka checkup karke score deta hai.
+    PROMPT TO PASTE:
+    "Microsoft Defender for Cloud kya karta hai, ek doctor ke full
+    body checkup report ke example se Hinglish mein samjhao. 'Secure
+    Score' kya hota hai simple bhasha mein."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC E.2 - Azure Policy (Ghar ke rules, chahe kisi ko chaabi mile)
+    Isko aise socho: Ghar mein chaahe kisi ke paas chaabi ho, ek rule
+    fix hai - "raat 12 baje ke baad TV nahi chalega" - chaabi hone se
+    bhi rule tod nahi sakte agar policy block kar de.
+    PROMPT TO PASTE:
+    "Azure Policy RBAC se kaise alag hai, ghar ke fixed rules (jaise
+    'raat 12 baje ke baad TV band') ke example se Hinglish mein
+    samjhao - chaabi (access) hone ke bawajood policy kaise rok sakti
+    hai."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC E.3 - Encryption (Data ko coded form mein rakhna)
+    Isko aise socho: Jaise ek diary jisme tum secret code mein likhte
+    ho - agar koi chura bhi le, bina code jaane padh nahi sakta.
+    PROMPT TO PASTE:
+    "Data encryption (at-rest aur in-transit) kya hota hai, secret
+    code wali diary ke example se Hinglish mein samjhao - simple
+    words mein, real company mein isse kya fayda hota hai."
+    MERA EXAMPLE: ___________
+
+[ ] TOPIC E.4 - OS Patching (Purana taala change karna)
+    Isko aise socho: Ghar ka gate strong hai lekin agar taala 5 saal
+    purana aur kamzor ho gaya hai, tab bhi chor ghus sakta hai - isliye
+    taala bhi time-time pe upgrade/change karna padta hai.
+    PROMPT TO PASTE:
+    "VM/server patching kyun zaroori hai chaahe network security
+    (NSG/firewall) already strong ho, purane/kamzor taale ke example
+    se Hinglish mein samjhao."
+    MERA EXAMPLE: ___________
+
+
+########################################################################
+BONUS: SAB KUCH EK KAHANI MEIN
+########################################################################
+[ ] EXERCISE F.1 - Poori Kahani Bolke Dikhao
+    PROMPT TO PASTE:
+    "Mujhe ek chhoti kahani bolke sikhao jisme ek 'user' apne office
+    (Azure) mein login karta hai, MFA se verify hota hai, sirf apne
+    department ka access milta hai (RBAC), server tak jaane ke liye
+    reception (Bastion) se hoke jaata hai, aur server tijori (Key
+    Vault) se password nikalta hai bina khud type kiye. Pura flow
+    Hinglish mein, jargon-free, real building ke example se sunao."
+    Deliverable: Yeh kahani apne mentor ko 2-3 min mein sunao - agar
+    tum yeh sunaa sako, matlab tumhe pura concept clear hai.
+
+
+========================================================================
+DAILY REPORT (Hinglish mein bharo)
+========================================================================
+Date                     : ___________
+Topic kya tha            : ___________
+Ye cheez hai kya (1-2 line, simple)  : ___________
+Real life mein kaha use hoti hai      : ___________
+Maine hands-on kya kiya               : ___________
+Mentor pooch sakta hai aisa sawal + mera jawab : ___________
+Kaha atka / confuse hua                : ___________
+========================================================================
