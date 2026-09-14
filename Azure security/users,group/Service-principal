@@ -1,0 +1,47 @@
+
+
+
+Haan, Service Principal bhi create kiya ja sakta hai, lekin woh Managed Identity jaisa nahi banta. Tumne jo backend VMSS ko managed identity di hai, woh Azure resource ki identity hai. Service Principal usually application ya automation ke liye banaya jata hai.
+
+Aur ek important correction: Service Principal ko RBAC ke Members mein select karne ke liye pehle uski identity create honi chahiye. Sirf role assignment screen par jaane se service principal create nahi hota.
+
+Service Principal banane ka exact practical
+
+Tumhare case mein Azure Portal → Microsoft Entra ID → App registrations se banao. Microsoft ke according, New registration karte hi application ke saath uska service principal automatically create ho jata hai. 
+Microsoft Learn
+
+
+
+
+
+
+Haan, Service Principal bhi create kiya ja sakta hai, lekin woh Managed Identity jaisa nahi banta. humne jo backend VMSS ko managed identity di hai, woh Azure resource ki identity hai. Service Principal usually application ya automation ke liye banaya jata hai.
+
+Aur ek important correction: Service Principal ko RBAC ke Members mein select karne ke liye pehle uski identity create honi chahiye. Sirf role assignment screen par jaane se service principal create nahi hota.
+
+Service Principal banane ka exact practical
+
+Tumhare case mein Azure Portal → Microsoft Entra ID → App registrations se banao. Microsoft ke according, New registration karte hi application ke saath uska service principal automatically create ho jata hai. 
+Microsoft Learn
+
+
+
+
+
+stepsAzure Portal open karo.
+
+Search karo Microsoft Entra ID.
+
+Left menu mein App registrations.
+
+New registration.
+
+Name rakho: rbac-practice-app
+
+Supported account types: Accounts in this organizational directory only
+
+Redirect URI: abhi blank chhod do.
+
+Register.
+
+Ye application registration hai, aur isi ke saath service principal create ho jayega.

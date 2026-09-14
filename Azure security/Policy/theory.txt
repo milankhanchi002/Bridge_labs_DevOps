@@ -1,0 +1,62 @@
+Policy Definition
+        ↓
+Assignment
+        ↓
+Evaluation
+        ↓
+Effect
+        ↓
+Compliance
+
+
+
+RBAC asks:
+"WHO can DO WHAT?"
+
+Policy
+Policy asks:
+"WHAT configuration is ALLOWED?"
+
+
+
+
+
+
+
+
+
+
+
+
+                    Azure Governance
+                          │
+                     Azure Policy
+                          │
+             ┌────────────┴────────────┐
+             │                         │
+      Policy Definition           Initiative
+             │                         │
+       ┌─────┴─────┐             Multiple Policies
+       │           │
+   Conditions   Parameters
+       │
+       ↓
+   Assignment
+       │
+       ↓
+ Management Group / Subscription /
+ Resource Group / Resource
+       │
+       ↓
+    Evaluation
+       │
+       ↓
+     Effect
+       │
+ ┌─────┼────────┬───────────┐
+ ↓     ↓        ↓           ↓
+Audit Deny    Modify   DeployIfNotExists
+       │
+       ↓
+   Compliance
+   ✅ / ❌

@@ -1,0 +1,436 @@
+{
+  "Name": "VM Start Stop Role",
+  "Description": "Can start and stop virtual machines",
+  "Actions": [
+    "Microsoft.Compute/virtualMachines/read",
+    "Microsoft.Compute/virtualMachines/start/action",
+    "Microsoft.Compute/virtualMachines/deallocate/action"
+  ],
+  "NotActions": [],
+  "DataActions": [],
+  "NotDataActions": [],
+  "AssignableScopes": [
+    "/subscriptions/<subscription-id>"
+  ]
+}
+
+
+# Azure RBAC (Role-Based Access Control)
+
+## 1. What is Azure RBAC?
+
+**Azure RBAC is an authorization system built on Azure Resource Manager (ARM) that provides fine-grained access control to Azure resources.**
+
+It answers:
+
+> **Who can do What on Which Resource?**
+
+RBAC is used to control access to Azure resources based on roles.
+
+### Basic Formula
+
+**Security Principal + Role Definition + Scope = Role Assignment**
+
+---
+
+# 2. Security Principal
+
+A **Security Principal** is an identity to which permissions/access can be assigned.
+
+### Types of Security Principals
+
+### 1. User
+
+Represents an individual person in Microsoft Entra ID.
+
+Example:
+
+* Milan → Reader role
+
+### 2. Group
+
+A collection of users.
+
+Example:
+
+* DevOps-Team → Contributor role
+* All members of the group inherit the assigned access.
+
+### 3. Service Principal
+
+An identity used by an application, automation, or service to access Azure resources.
+
+Example:
+
+* CI/CD pipeline → Azure resources
+
+Usually created through:
+
+**Microsoft Entra ID → App registrations → New registration**
+
+An App Registration creates an application identity, with a corresponding service principal in the tenant.
+
+### 4. Managed Identity
+
+An Azure-managed identity used by Azure resources/applications to authenticate to Azure services without manually managing credentials.
+
+Example:
+
+**Backend VMSS → Managed Identity → Key Vault**
+
+Azure manages the identity's credentials.
+
+---
+
+# 3. Role Definition
+
+A **Role Definition** is a collection of permissions that defines what actions an identity can perform.
+
+It can contain:
+
+* Actions
+* NotActions
+* DataActions
+* NotDataActions
+
+Example:
+
+**Reader**
+
+* Can read/view resources
+* Cannot modify or delete resources
+
+---
+
+# 4. Actions
+
+**Actions = management-plane operations that a role allows.**
+
+Examples:
+
+```text
+Microsoft.Compute/virtualMachines/read
+Microsoft.Compute/virtualMachines/start/action
+Microsoft.Compute/virtualMachines/deallocate/action
+```
+
+These control operations such as:
+
+* Read
+* Create
+* Update
+* Delete
+* Start
+* Stop
+
+---
+
+# 5. NotActions
+
+**NotActions = management operations excluded from the role's Actions.**
+
+Important:
+
+**NotActions is not the same as an explicit Deny.**
+
+Azure RBAC also has separate deny assignments.
+
+---
+
+# 6. DataActions
+
+**DataActions = permissions to access or operate on data inside a resource.**
+
+Example:
+
+Storage Account:
+
+* Read blob data
+* Write blob data
+* Delete blob data
+
+### Management Plane vs Data Plane
+
+**Management Plane**
+→ Manage the Azure resource itself.
+
+Example:
+
+* Create storage account
+* Change storage configuration
+
+**Data Plane**
+→ Access the actual data inside the resource.
+
+Example:
+
+* Read a blob
+* Write a blob
+
+---
+
+# 7. Scope
+
+**Scope = where the assigned permissions apply.**
+
+Azure RBAC supports these scopes:
+
+```text
+Management Group
+       ↓
+Subscription
+       ↓
+Resource Group
+       ↓
+Resource
+```
+
+Example:
+
+```text
+Reader
+  ↓
+Resource Group: rg-chatapp
+```
+
+The role applies at that scope and can be inherited by child resources.
+
+### Principle
+
+**Broader scope → wider access**
+
+**Narrower scope → more limited access**
+
+For least privilege, prefer the smallest scope that satisfies the requirement.
+
+---
+
+# 8. Role Assignment
+
+A **Role Assignment** connects:
+
+```text
+Security Principal
+        +
+Role Definition
+        +
+Scope
+```
+
+Example:
+
+```text
+Principal: Milan
+Role: Reader
+Scope: rg-chatapp
+```
+
+Meaning:
+
+**Milan gets Reader permissions on rg-chatapp and applicable child resources.**
+
+---
+
+# 9. Built-in Roles
+
+Azure provides predefined RBAC roles for common requirements.
+
+Important built-in roles:
+
+### Owner
+
+* Full management access
+* Can also assign Azure RBAC roles
+
+### Contributor
+
+* Can manage Azure resources
+* Cannot normally assign Azure RBAC roles
+
+### Reader
+
+* Can view resources
+* Cannot modify resources
+
+### User Access Administrator
+
+* Can manage user access to Azure resources
+
+There are many other specialized built-in roles, such as roles for networking, storage, virtual machines, Key Vault, etc.
+
+---
+
+# 10. Custom / User-Defined Roles
+
+A **Custom Role** is a role created by the organization according to its own requirements.
+
+Used when built-in roles provide too many or too few permissions.
+
+Example requirement:
+
+> Developer should be able to read, start and stop VMs, but should not delete them.
+
+Create:
+
+```text
+Custom Role: VM Start Stop
+
+Actions:
+✓ VM read
+✓ VM start
+✓ VM deallocate
+
+Delete:
+✗ Not included
+```
+
+### Custom Role can be created using:
+
+* Azure Portal GUI
+* JSON
+* Azure CLI
+* PowerShell
+* ARM/Bicep/API
+
+Custom role definition can contain:
+
+```text
+Name
+Description
+Actions
+NotActions
+DataActions
+NotDataActions
+AssignableScopes
+```
+
+---
+
+# 11. Built-in vs Custom Role
+
+| Built-in Role           | Custom Role                       |
+| ----------------------- | --------------------------------- |
+| Predefined by Microsoft | Created by organization           |
+| Ready to use            | Designed for specific requirement |
+| Common permissions      | Granular permissions              |
+| Example: Reader         | Example: VM Start Stop            |
+| Cannot directly modify  | Can define required permissions   |
+
+---
+
+# 12. RBAC Real-World Example
+
+### Requirement
+
+A developer needs to manage VMs but should not have unnecessary permissions.
+
+Possible solution:
+
+```text
+Developer Group
+       ↓
+Custom VM Management Role
+       ↓
+Resource Group
+```
+
+Custom role:
+
+```text
+VM Read
+VM Start
+VM Stop
+VM Deallocate
+```
+
+No VM delete permission.
+
+This follows the **Principle of Least Privilege**:
+
+> Give an identity only the permissions it actually needs.
+
+---
+
+# 13. RBAC vs Microsoft Entra ID
+
+### Microsoft Entra ID
+
+Manages identities:
+
+* Users
+* Groups
+* Applications
+* Service Principals
+* Managed Identities
+
+### Azure RBAC
+
+Controls what those identities can do on Azure resources.
+
+Simple flow:
+
+```text
+Microsoft Entra ID
+       ↓
+Identity
+       ↓
+Azure RBAC
+       ↓
+Role
+       ↓
+Scope
+       ↓
+Azure Resource
+```
+
+---
+
+# 14. RBAC vs Azure Policy
+
+### RBAC
+
+Controls:
+
+> **Who can do what?**
+
+Example:
+
+Milan can start/stop a VM.
+
+### Azure Policy
+
+Controls:
+
+> **Which resource configurations are allowed/compliant?**
+
+Example:
+
+Only allow resources in approved Azure regions.
+
+Both can work together:
+
+```text
+User
+ ↓
+RBAC → Is the user allowed to perform the action?
+ ↓
+Policy → Does the resource configuration comply?
+ ↓
+Azure Resource
+```
+
+---
+
+# 15. Interview Definition
+
+**Azure RBAC is an authorization system built on Azure Resource Manager that provides fine-grained access management of Azure resources using security principals, role definitions, and scopes.**
+
+### Remember this:
+
+**Security Principal = WHO**
+
+**Role Definition = WHAT**
+
+**Scope = WHERE**
+
+**Role Assignment = WHO + WHAT + WHERE**

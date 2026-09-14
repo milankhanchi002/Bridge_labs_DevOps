@@ -1,0 +1,113 @@
+                         INTERNET
+                            │
+                     ┌──────▼──────┐
+                     │ DDoS Protect│
+                     └──────┬──────┘
+                            │
+                    ┌───────▼────────┐
+                    │ External LB /  │
+                    │ App Gateway    │
+                    └───────┬────────┘
+                            │
+                  ┌─────────▼─────────┐
+                  │   WEB SUBNET      │
+                  │  Web Servers/VMs  │
+                  └─────────┬─────────┘
+                            │
+                       NSG / ASG
+                            │
+                  ┌─────────▼─────────┐
+                  │ INTERNAL LB /     │
+                  │ APPLICATION GW    │
+                  └─────────┬─────────┘
+                            │
+             ┌──────────────┴──────────────┐
+             │                             │
+      ┌──────▼───────┐              ┌──────▼──────┐
+      │ APP SUBNET 1 │              │ APP SUBNET 2│
+      │ Backend VMs  │              │ Backend VMs │
+      └──────┬───────┘              └──────┬──────┘
+             │                             │
+             └──────────────┬──────────────┘
+                            │
+                     ┌──────▼───────┐
+                     │ DB SUBNET    │
+                     │ SQL / DB     │
+                     └──────────────┘
+
+          ┌────────────────────────────────────┐
+          │ Azure Firewall / NVA / UDR         │
+          │ Central traffic inspection/routing │
+          └────────────────────────────────────┘
+
+
+
+
+
+
+
+
+
+
+VNet
+│
+├── Web Subnet
+│      └── Web VMs
+│
+├── App Subnet
+│      └── Backend VMs
+│
+├── DB Subnet
+│      └── Database
+│
+├── Firewall Subnet
+│      └── Azure Firewall
+│
+└── GatewaySubnet
+       └── VPN/ExpressRoute Gateway
+
+
+
+
+
+Azure VNet
+   │
+   ├── VNet Peering ───────► Another VNet same region
+   │
+   ├── Global Peering ─────► VNet in another region
+   │
+   ├── VPN Gateway ────────► On-premises via Internet/IPsec
+   │
+   └── ExpressRoute ──────► On-premises via private circuit       
+
+
+
+
+
+
+   Internet
+   │
+   ▼
+Public IP
+   │
+External Load Balancer
+   │
+   ├── Web VM1
+   ├── Web VM2
+   └── Web VM3
+   Azure Load Balancer is primarily Layer 4.
+
+
+It handles:
+TCP
+UDP
+ports
+IP addresses
+health probes
+
+It doesn't understand your HTTP URL like:
+
+/app/users
+/api/orders
+
+Microsoft classifies Azure Load Balancer as Layer 4.

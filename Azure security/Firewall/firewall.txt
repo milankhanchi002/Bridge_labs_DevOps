@@ -1,0 +1,9 @@
+VNet Peering ✅
+Hub-Spoke architecture ✅
+UDR / forced routing ✅
+Azure Firewall as NVA ✅
+Firewall Network Rules ✅
+Spoke-to-spoke traffic through Firewall ✅
+Application Rules / FQDN filtering ✅
+Outbound Internet inspection ✅
+DNAT for inbound Internet → VM ✅
