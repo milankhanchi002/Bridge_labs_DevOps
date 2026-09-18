@@ -1,0 +1,367 @@
+PHASE 2 — Azure CLI Command Structure & Resource Groups
+Goal
+
+Understand the grammar/pattern of Azure CLI commands, rather than memorizing individual commands.
+
+Concepts
+az command hierarchy
+Command groups and subcommands
+create / list / show / update / delete
+Parameters and flags
+Required vs optional parameters
+Resource names vs resource IDs
+Subscription and resource-group targeting
+CLI help at different levels
+Output formats: table, json, tsv
+Exit codes and basic command success/failure
+Hands-on
+
+Start with Resource Groups because you already understand them from the Portal:
+
+az group create
+az group list
+az group show
+az group exists
+az group delete
+
+Then learn:
+
+az group --help
+az group create --help
+Practical exercise
+
+Create a small practice resource group, inspect it, modify its tags, list it, and finally delete it.
+
+You'll learn the complete lifecycle:
+
+CREATE
+  ↓
+SHOW
+  ↓
+LIST
+  ↓
+UPDATE
+  ↓
+DELETE
+PHASE 3 — Querying Azure with CLI
+
+This is where CLI becomes much more powerful.
+
+Concepts
+JSON output
+-o table
+-o json
+-o tsv
+--query
+JMESPath basics
+Filtering
+Selecting specific properties
+Extracting values for scripts
+Hands-on
+
+Start with:
+
+az group list -o table
+
+Then:
+
+az group list -o json
+
+Then begin querying:
+
+az group list --query "[].name" -o table
+
+You'll learn to go from:
+
+Azure returns lots of information
+            ↓
+       --query
+            ↓
+Only the information I need
+
+This is very important for DevOps scripting.
+
+PHASE 4 — Networking with Azure CLI
+
+Now we use your existing networking knowledge.
+
+You'll recreate small pieces of the networking architecture you've already built through Portal.
+
+Concepts
+VNet
+Subnet
+NSG
+NSG rules
+Public IP
+NIC
+Private IP
+Route table
+Routes
+Association
+Resource IDs
+Commands
+az network vnet create
+az network vnet list
+az network vnet show
+
+az network vnet subnet create
+az network vnet subnet list
+az network vnet subnet show
+
+az network nsg create
+az network nsg rule create
+az network nsg rule list
+
+az network public-ip create
+az network nic create
+Practical project
+
+Build:
+
+Resource Group
+     ↓
+VNet
+     ↓
+Subnet
+     ↓
+NSG
+     ↓
+NSG Rule
+
+using CLI only.
+
+The objective isn't just creation.
+
+You'll compare:
+
+Portal configuration
+       ↕
+CLI command
+       ↕
+Azure resource
+PHASE 5 — Virtual Machines with CLI
+
+Now move to compute.
+
+Concepts
+VM creation
+Image
+VM size
+SSH keys
+NIC
+Public/private IP
+NSG
+Disk
+VM lifecycle
+VM properties
+VM status
+Commands
+az vm create
+az vm list
+az vm show
+az vm start
+az vm stop
+az vm restart
+az vm delete
+az vm get-instance-view
+Practical project
+
+Create:
+
+RG
+ ↓
+VNet
+ ↓
+Subnet
+ ↓
+NSG
+ ↓
+VM
+ ↓
+SSH
+
+Then connect:
+
+ssh user@public-ip
+
+This will connect your Linux knowledge + Networking + Azure CLI.
+
+PHASE 6 — Advanced Azure CLI
+
+Once basic resource management is comfortable, learn:
+
+Resource discovery
+az resource list
+az resource show
+az resource tag
+Resource IDs
+
+Understand:
+
+/subscriptions/{subscriptionId}
+/resourceGroups/{resourceGroup}
+/providers/{resourceProvider}
+/{resourceType}/{resourceName}
+Useful concepts
+Resource IDs
+Locations
+Tags
+Resource types
+Resource providers
+API versions
+Extensions
+CLI configuration
+Environment variables
+PHASE 7 — Authentication for DevOps
+
+This is where CLI moves from personal usage → automation.
+
+You'll learn:
+
+az login
+     ↓
+Human authentication
+
+versus:
+
+Service Principal
+     ↓
+Application identity
+     ↓
+Automation
+
+and:
+
+Managed Identity
+     ↓
+Azure resource identity
+     ↓
+No stored password/secret
+Concepts
+Microsoft Entra ID
+User authentication
+Service principals
+App registrations
+Client ID
+Tenant ID
+Client secret/certificate
+Managed Identity
+RBAC
+Least privilege
+Non-interactive authentication
+
+You'll already have a strong foundation here because you've worked with managed identity + Key Vault.
+
+PHASE 8 — CLI Automation & DevOps
+
+Now we stop treating CLI as individual commands.
+
+We start building automation.
+
+Shell scripting
+#!/bin/bash
+
+az group create ...
+az network vnet create ...
+az vm create ...
+
+Learn:
+
+Variables
+Arguments
+Conditions
+Loops
+Exit codes
+Error handling
+Command substitution
+Environment variables
+
+Then:
+
+CLI commands
+     ↓
+Bash script
+     ↓
+Repeatable infrastructure operation
+PHASE 9 — CLI → Infrastructure as Code
+
+This is the bridge toward the next major DevOps skill.
+
+You'll understand why repeatedly doing:
+
+az network vnet create ...
+az network subnet create ...
+az network nsg create ...
+az vm create ...
+
+is still not ideal for large infrastructure.
+
+Then move toward:
+
+Imperative
+   ↓
+"Create this"
+   ↓
+Azure CLI
+
+to:
+
+Declarative
+   ↓
+"This is what my infrastructure should look like"
+   ↓
+Bicep / Terraform
+
+Since you've already touched Bicep, this will make much more sense after CLI.
+
+Final Roadmap
+PHASE 0
+Azure CLI Architecture
+        ↓
+PHASE 1
+Installation + Login + Subscription
+        ↓
+PHASE 2
+Command Structure + Resource Groups
+        ↓
+PHASE 3
+Output + JSON + --query
+        ↓
+PHASE 4
+Networking with CLI
+        ↓
+PHASE 5
+VMs with CLI
+        ↓
+PHASE 6
+Advanced Resource Management
+        ↓
+PHASE 7
+Service Principal + Managed Identity + RBAC
+        ↓
+PHASE 8
+Bash + Azure CLI Automation
+        ↓
+PHASE 9
+CLI → Bicep / Terraform
+        ↓
+PHASE 10
+CLI in CI/CD
+What I recommend right now
+
+Don't jump to networking yet.
+
+Start Phase 2 with just:
+
+az group --help
+az group create
+az group list
+az group show
+az group exists
+az group delete
+
+We'll take each command one at a time and for each one I'll explain:
+
+What → Why → Syntax → Parameters → What happens behind the scenes → Hands-on → Verify → Cleanup
+
+That approach will prevent CLI from becoming another command-memorization exercise.

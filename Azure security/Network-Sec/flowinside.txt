@@ -111,3 +111,64 @@ It doesn't understand your HTTP URL like:
 /api/orders
 
 Microsoft classifies Azure Load Balancer as Layer 4.
+
+
+
+
+
+
+
+
+
+
+                 Azure
+────────────────────────────────────────
+
+            Hub VNet
+          10.0.0.0/16
+               |
+        Azure Firewall
+               |
+       ┌───────┴────────┐
+       |                |
+       ↓                ↓
+   Web Spoke        Backend Spoke
+  10.10.0.0/16      10.1.0.0/16
+       |                |
+       └──── Peering ───┘
+
+
+Backend VM
+    |
+    ↓
+Private Endpoint
+    |
+    ↓
+Azure Key Vault
+    |
+Private DNS Zone
+    |
+Private hostname → Private IP
+
+
+On-prem Network
+10.50.0.0/16
+       |
+       |
+  VPN Gateway
+       |
+   IPsec tunnel
+       |
+      Hub
+
+
+OR
+
+
+On-prem Network
+       |
+ExpressRoute
+       |
+Microsoft Network
+       |
+Azure

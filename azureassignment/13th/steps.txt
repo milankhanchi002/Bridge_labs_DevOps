@@ -1,0 +1,26 @@
+Assignment: Passwordless Database Authentication (Azure SQL & Managed Identity)
+
+Step 1: Objective & Architecture
+- Eliminate hardcoded SQL usernames and passwords by using Microsoft Entra ID and Managed Identities.
+- Architecture Flow: Azure VM (with Managed Identity) requests an OAuth Token and connects securely to the Azure SQL Database without a password.
+
+Step 2: Create the Private Virtual Machine
+- Provisioned an Ubuntu Linux VM (`for-db-practice`) in East Asia with no public IP address (fully private and secure).
+- Enabled System-assigned managed identity (Set to "On"), which automatically creates a service principal in Microsoft Entra ID for the VM.
+
+Step 3: Provision Azure SQL Database
+- Created an Azure SQL Server and Database (`for-db-practice-db`) under Microsoft Entra-only authentication mode (completely disabling traditional SQL admin passwords).
+- Configured personal account as the Microsoft Entra Admin.
+
+Step 4: Map VM Identity to Database (Query Editor)
+- Logged into the database via the Azure Portal Query Editor using Entra credentials.
+- Executed user creation and role assignment script:
+  * CREATE USER [for-db-practice] FROM EXTERNAL PROVIDER; (Registers the VM's managed identity inside the database)
+  * ALTER ROLE db_datareader ADD MEMBER [for-db-practice]; (Grants read permissions)
+  * ALTER ROLE db_datawriter ADD MEMBER [for-db-practice]; (Grants write permissions)
+
+Step 5: Secure Remote Access & Verification
+- Used Azure Bastion (Developer SKU) to securely log into the private VM browser terminal shell (`azureuser@for-db-practice`) without exposing SSH ports to the public internet.
+- Tested and verified passwordless authentication by invoking the local instance metadata endpoint via Azure CLI:
+  * az account get-access-token --resource https://database.windows.net/
+- Successfully received the live JSON accessToken (Bearer token), proving that applications on this VM can securely authenticate to the database dynamically without credentials.

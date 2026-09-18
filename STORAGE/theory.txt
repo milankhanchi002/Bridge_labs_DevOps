@@ -1,0 +1,24 @@
+                 AZURE STORAGE
+                       │
+       ┌───────────────┼────────────────┐
+       │               │                │
+     Object          File             Block
+     Storage        Storage           Storage
+       │               │                │
+      Blob           Files           Managed Disk
+       │
+       ├── Hot
+       ├── Cool
+       ├── Cold
+       └── Archive
+       
+       ┌───────────────┐
+       │               │
+     NoSQL          Messaging
+       │               │
+     Table           Queue
+       
+       │
+       ↓
+  Data Lake Gen2
+  Big Data / Analytics

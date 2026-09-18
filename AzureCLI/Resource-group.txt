@@ -1,0 +1,18 @@
+You
+ │
+ │ az group create ...
+ ↓
+Azure CLI
+ │
+ │ authentication token
+ ↓
+Azure Management API
+ │
+ ↓
+Azure Resource Manager
+ │
+ ↓
+Microsoft.Resources
+ │
+ ↓
+Resource Group

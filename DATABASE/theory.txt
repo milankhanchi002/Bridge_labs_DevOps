@@ -1,0 +1,50 @@
+                         AZURE DATA
+                             │
+          ┌──────────────────┼──────────────────┐
+          │                  │                  │
+     RELATIONAL           NoSQL             ANALYTICS
+          │                  │                  │
+   ┌──────┼──────┐          │                  │
+   │      │      │          │                  │
+ Azure   Azure  Azure    Cosmos DB        Synapse
+ SQL    PostgreSQL MySQL
+ Database
+   │
+ SQL Managed
+ Instance
+
+
+
+
+
+
+                          USERS
+                           │
+                           ▼
+                    Web / Mobile App
+                           │
+                           ▼
+                    Backend / APIs
+                           │
+             ┌─────────────┴─────────────┐
+             │                           │
+             ▼                           ▼
+       PostgreSQL                  Blob Storage
+       / Azure SQL                 Product Images
+             │
+             │
+             ▼
+      Production Database
+             │
+             │
+             ▼
+       Azure Data Factory
+             │
+             ▼
+        Data Lake
+             │
+             ▼
+      Synapse Analytics
+             │
+             ▼
+       BI / Reporting

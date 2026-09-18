@@ -1,0 +1,454 @@
+You
+ ↓
+az command
+ ↓
+Azure CLI
+ ↓
+Authentication
+ ↓
+Azure management endpoint/API
+ ↓
+Azure Resource Manager
+ ↓
+Resource Provider
+ ↓
+Azure resource
+
+
+
+Why is Azure CLI not a separate Azure service?
+What happens when you run az vm list?
+What is ARM's role?
+What is Microsoft.Compute?
+Authentication vs authorization?
+What is an access token?
+Where does RBAC fit?
+Why does CLI care about the current subscription?
+What is the difference between management plane and data plane?
+Why does CLI commonly return JSON?
+
+
+
+========================================
+PHASE 0 — AZURE CLI ARCHITECTURE NOTES
+========================================
+
+
+1. CLI — COMMAND LINE INTERFACE
+--------------------------------
+- CLI = Command Line Interface.
+- Allows us to interact with Azure by typing commands instead of using GUI.
+- Azure CLI command starts with: az
+- Example:
+    az vm list
+    az group list
+    az account show
+
+REMEMBER:
+CLI is NOT a different Azure.
+It is another interface to interact with Azure.
+
+
+2. AZURE PORTAL vs AZURE CLI
+-----------------------------
+Azure Portal:
+- GUI-based.
+- Click → Configure → Create.
+- Good for learning, exploration and one-off operations.
+
+Azure CLI:
+- Command-based.
+- Good for automation, scripting and repeatable operations.
+- Common in DevOps/CI-CD.
+
+Both ultimately interact with Azure services/APIs.
+
+MENTAL MODEL:
+
+Portal ──┐
+CLI ─────┼──> Azure APIs ──> ARM ──> Azure Resources
+PowerShell┘
+
+
+3. AZURE CLI vs POWERSHELL
+---------------------------
+Azure CLI:
+- Commands start with "az".
+- Example:
+    az vm list
+
+Azure PowerShell:
+- Uses PowerShell cmdlets.
+- Example:
+    Get-AzVM
+
+REMEMBER:
+- Azure CLI = CLI tool
+- Azure PowerShell = PowerShell-based tool
+- Both can manage Azure resources.
+
+
+4. AZURE CLI vs REST API
+-------------------------
+- REST API is the lower-level interface for communicating with Azure.
+- Azure CLI internally makes API requests.
+- We normally don't manually construct REST API requests when using CLI.
+
+FLOW:
+
+az command
+   ↓
+Azure CLI
+   ↓
+REST API request
+   ↓
+Azure Resource Manager
+   ↓
+Resource Provider
+   ↓
+Azure Resource
+
+
+5. MANAGEMENT PLANE
+--------------------
+Management plane = managing/configuring Azure resources.
+
+Examples:
+- Create VM
+- Delete VM
+- Start/stop VM
+- Create VNet
+- Configure NSG
+- Change VM size
+- Assign RBAC
+- Add tags
+
+Typical management endpoint:
+    management.azure.com
+
+REMEMBER:
+Management plane = "Manage the Azure resource."
+
+
+6. DATA PLANE
+--------------
+Data plane = interacting with the actual data/service inside a resource.
+
+Examples:
+- Upload blob to Storage
+- Download blob
+- Read/write database data
+- Send messages to a messaging service
+- SSH into a VM
+
+REMEMBER:
+
+Management Plane:
+    Manage the resource
+
+Data Plane:
+    Use/interact with the resource
+
+
+7. AZURE RESOURCE MANAGER (ARM)
+--------------------------------
+- ARM = Azure Resource Manager.
+- Central management layer for Azure resources.
+- Receives management requests from Portal, CLI, PowerShell, REST API, etc.
+- Handles resource management and authorization-related processing.
+- Works with Resource Providers.
+
+FLOW:
+
+User
+ ↓
+Portal / CLI / PowerShell
+ ↓
+ARM
+ ↓
+Resource Provider
+ ↓
+Resource
+
+
+8. RESOURCE PROVIDERS
+----------------------
+- Azure resources are handled by Resource Providers.
+- Provider names usually start with "Microsoft."
+
+Important examples:
+
+Microsoft.Compute
+- VM
+- VMSS
+- Disks
+
+Microsoft.Network
+- VNet
+- Subnet
+- NSG
+- Public IP
+- Load Balancer
+
+Microsoft.Storage
+- Storage Account
+
+Microsoft.KeyVault
+- Key Vault
+
+REMEMBER:
+Resource Provider = Azure service provider responsible for a resource type.
+
+
+9. AUTHENTICATION
+------------------
+Authentication = "WHO ARE YOU?"
+
+- Azure uses Microsoft Entra ID for identity/authentication.
+- CLI login:
+    az login
+
+FLOW:
+
+az login
+   ↓
+Microsoft Entra ID
+   ↓
+Identity verified
+   ↓
+Azure CLI authenticated
+
+
+10. ACCESS TOKEN
+-----------------
+- After authentication, Azure CLI obtains access tokens.
+- Token is presented when making authorized API requests.
+- It allows Azure to identify the authenticated identity.
+- CLI normally manages tokens automatically.
+
+Simplified flow:
+
+Login
+ ↓
+Entra ID
+ ↓
+Access Token
+ ↓
+API Request
+
+
+11. RBAC
+--------
+RBAC = Role-Based Access Control.
+
+RBAC answers:
+    "WHAT CAN THIS IDENTITY DO?"
+
+Examples:
+- Reader → view resources
+- Contributor → manage resources but generally cannot assign RBAC roles
+- Owner → full management including access management
+
+REMEMBER:
+
+Authentication:
+    WHO are you?
+
+RBAC / Authorization:
+    WHAT are you allowed to do?
+
+
+12. SUBSCRIPTION CONTEXT
+-------------------------
+- Azure account can have multiple subscriptions.
+- CLI needs a current/default subscription for commands that operate on subscription resources.
+- Subscription context answers:
+    "WHERE am I operating?"
+
+Useful commands:
+
+    az account list
+    az account show
+    az account set --subscription "<name-or-id>"
+
+Example:
+
+    az account set --subscription "Azure for Students"
+
+Then:
+
+    az vm list
+
+will operate/query using that subscription context.
+
+REMEMBER:
+
+Entra ID = WHO
+Subscription = WHERE
+RBAC = WHAT
+
+
+13. API REQUEST
+---------------
+- CLI commands are translated into API requests.
+- Azure receives the request through its management APIs.
+- Request contains information such as:
+    - Subscription
+    - Resource group
+    - Resource
+    - Operation
+    - Authentication token
+
+Example:
+
+    az vm list
+
+Conceptually becomes an API request to Azure's management API.
+
+
+14. JSON RESPONSE
+------------------
+- Azure APIs commonly return structured JSON data.
+- Azure CLI can display/process this data in different formats.
+
+Examples:
+
+    az vm list -o json
+    az vm list -o table
+    az vm list -o tsv
+
+JSON:
+- Machine-readable.
+- Useful for scripts/automation.
+
+Table:
+- Human-readable.
+
+TSV:
+- Useful when passing values into shell scripts/commands.
+
+
+15. COMPLETE AZURE CLI FLOW
+----------------------------
+
+USER
+ ↓
+az command
+ ↓
+Azure CLI
+ ↓
+Authentication / Access Token
+ ↓
+Subscription Context
+ ↓
+API Request
+ ↓
+Azure Resource Manager
+ ↓
+Resource Provider
+ ↓
+Azure Resource
+ ↓
+API Response (usually JSON)
+ ↓
+Azure CLI
+ ↓
+Terminal Output
+
+
+16. MOST IMPORTANT MENTAL MODEL
+--------------------------------
+
+                    USER
+                      |
+             +--------+--------+
+             |        |        |
+           Portal    CLI    PowerShell
+             |        |        |
+             +--------+--------+
+                      |
+                  Azure APIs
+                      |
+                     ARM
+                      |
+              Resource Provider
+                      |
+                  Resource
+
+
+IDENTITY / ACCESS:
+
+Entra ID
+   ↓
+Authentication
+   ↓
+Access Token
+   ↓
+RBAC / Authorization
+   ↓
+Allowed or Denied
+
+
+17. QUICK REVISION — REMEMBER THESE
+------------------------------------
+
+CLI
+→ Command-line way to interact with Azure.
+
+Portal
+→ GUI way to interact with Azure.
+
+REST API
+→ API-level communication with Azure.
+
+ARM
+→ Central management layer for Azure resources.
+
+Resource Provider
+→ Handles a particular Azure resource type.
+
+Entra ID
+→ Identity/authentication.
+
+Access Token
+→ Credential/token used with API requests.
+
+RBAC
+→ Determines what an identity is allowed to do.
+
+Subscription Context
+→ Determines which subscription CLI is currently targeting.
+
+Management Plane
+→ Manage/configure Azure resources.
+
+Data Plane
+→ Interact with the actual service/data.
+
+JSON
+→ Common structured API response format.
+
+
+18. 3 QUESTIONS TO REMEMBER
+----------------------------
+
+WHO am I?
+→ Microsoft Entra ID / Authentication
+
+WHERE am I?
+→ Subscription context
+
+WHAT can I do?
+→ RBAC / Authorization
+
+
+19. ONE-LINE ARCHITECTURE
+-------------------------
+
+CLI command
+→ API request
+→ ARM
+→ Resource Provider
+→ Azure Resource
+→ JSON response
+→ CLI output

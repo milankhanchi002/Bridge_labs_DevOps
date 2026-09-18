@@ -1,0 +1,36 @@
+Assignment 14: Restricting Storage Account Access to Private Subnets
+
+Step 1: Objective & Architecture
+- Goal: Secure an Azure Storage Account by blocking all public internet access and restricting inbound traffic exclusively to a designated private subnet using Service Endpoints.
+- Architecture Flow: Private Azure VM (inside VNet Subnet) -> Uses Service Endpoint (Microsoft.Storage.Global) -> Connects securely to Azure Storage Account via Microsoft's internal backbone network.
+
+Step 2: Virtual Network & Subnet Setup
+- Virtual Network: `vnet-service-endpoints` (Address space: 10.0.0.0/16) in East Asia.
+- Subnet: `service-endpoint-subnet` (Address range: 10.0.0.0/24) configured as a private application subnet.
+
+Step 3: Enable Service Endpoint on Subnet
+- Configured the `service-endpoint-subnet` to enable the `Microsoft.Storage.Global` service endpoint.
+- Ensured no conflicting endpoint types (like standard `Microsoft.Storage`) overlapped simultaneously to avoid configuration errors.
+
+Step 4: Storage Account Network Restriction & VNet Binding
+- Target Storage Account: `practicestorage2190`
+- Updated Networking settings from public access to "Enabled from selected networks".
+- Bound the storage account to `vnet-service-endpoints` and `service-endpoint-subnet`, establishing authorized tunnel communication.
+
+Step 5: Deploy Private Test Virtual Machine
+- Provisioned a test VM (`service-endpoint-test-vm`) inside the `service-endpoint-subnet` with **Public IP set to None** (fully isolated from the public internet).
+- Used Azure Bastion to securely access the private VM terminal shell (`azureuser@service-endpoint-test-vm`) without exposing SSH ports.
+
+Step 6: Verification & Testing
+- Executed a validation command from inside the test VM terminal:
+  * `curl -v https://practicestorage2190.blob.core.windows.net/`
+- Verified successful TLS handshake and connection to the storage account backend via the service endpoint (distinguished by successful transport/connection vs. external public requests which yield a 403 Forbidden response).
+
+
+
+
+
+
+
+
+curl -i https://storageforservice.blob.core.windows.net/mydata/2310990489_BlockChain.pdf

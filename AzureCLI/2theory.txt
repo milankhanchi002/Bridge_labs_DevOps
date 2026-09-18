@@ -1,0 +1,320 @@
+========================================
+PHASE 1A — AZURE CLI ON MAC TERMINAL
+========================================
+
+
+1. WHY USE MAC TERMINAL?
+-------------------------
+- Azure Cloud Shell is temporary and can become inactive.
+- Azure CLI can be installed directly on Mac.
+- Mac Terminal then works as the local environment for Azure CLI.
+- Azure resources are still managed in Microsoft's Azure cloud.
+
+MENTAL MODEL:
+
+Mac Terminal
+     ↓
+Azure CLI (`az`)
+     ↓
+Internet / Azure APIs
+     ↓
+Azure
+     ↓
+Your Subscriptions & Resources
+
+
+2. AZURE CLOUD SHELL vs MAC TERMINAL
+-------------------------------------
+
+Azure Cloud Shell:
+- Runs in Azure's cloud environment.
+- Browser-based.
+- Session can become inactive.
+
+Mac Terminal:
+- Runs locally on your Mac.
+- Azure CLI is installed on your machine.
+- Terminal remains available normally.
+- Commands communicate with Azure over the internet.
+
+REMEMBER:
+Azure CLI does NOT have to run inside Azure Cloud Shell.
+
+
+3. CHECK HOMEBREW
+------------------
+Homebrew = package manager commonly used on macOS.
+
+Check if installed:
+
+    brew --version
+
+If command works:
+→ Homebrew is installed.
+
+If:
+    command not found: brew
+
+→ Install Homebrew first.
+
+
+4. INSTALL AZURE CLI
+---------------------
+
+Update Homebrew:
+
+    brew update
+
+Install Azure CLI:
+
+    brew install azure-cli
+
+REMEMBER:
+This installs the `az` command locally on your Mac.
+
+
+5. VERIFY AZURE CLI
+--------------------
+
+Run:
+
+    az version
+
+Purpose:
+- Check that Azure CLI is installed.
+- Check installed Azure CLI version.
+
+Similar to:
+
+    java --version
+    node --version
+    python --version
+
+REMEMBER:
+`az version` checks the local CLI installation.
+
+
+6. LOGIN FROM MAC TERMINAL
+---------------------------
+
+Run:
+
+    az login
+
+Purpose:
+- Authenticate Azure CLI with your Microsoft account.
+- Browser normally opens for Microsoft authentication.
+
+Architecture:
+
+az login
+   ↓
+Microsoft Entra ID
+   ↓
+Authentication
+   ↓
+Access Token
+   ↓
+Azure CLI
+
+
+7. CHECK AVAILABLE SUBSCRIPTIONS
+---------------------------------
+
+Run:
+
+    az account list -o table
+
+Purpose:
+- Shows subscriptions accessible to the logged-in identity.
+
+Example:
+
+    Azure for Students
+    Pay-As-You-Go
+
+REMEMBER:
+`az account list` = What subscriptions can I access?
+
+
+8. CHECK CURRENT SUBSCRIPTION
+------------------------------
+
+Run:
+
+    az account show -o table
+
+Purpose:
+- Shows the currently active/default subscription.
+
+REMEMBER:
+`az account show` = Which subscription am I currently using?
+
+
+9. CHANGE CURRENT SUBSCRIPTION
+-------------------------------
+
+Command:
+
+    az account set --subscription "Azure for Students"
+
+Purpose:
+- Changes the active subscription context.
+
+Verify:
+
+    az account show -o table
+
+REMEMBER:
+`az account set` = Change WHERE CLI is currently operating.
+
+
+10. SUBSCRIPTION CONTEXT
+-------------------------
+
+If account has multiple subscriptions:
+
+    My Identity
+        │
+        ├── Azure for Students
+        │
+        └── Pay-As-You-Go
+
+CLI needs a current subscription context.
+
+Example:
+
+    az vm list
+
+The command uses the current subscription unless another context/subscription
+is explicitly specified.
+
+
+11. IMPORTANT COMMANDS
+----------------------
+
+Check CLI:
+    az version
+
+General help:
+    az --help
+
+Discover commands:
+    az find "list virtual machines"
+
+Login:
+    az login
+
+List subscriptions:
+    az account list -o table
+
+Show current subscription:
+    az account show -o table
+
+Change subscription:
+    az account set --subscription "<subscription-name-or-id>"
+
+
+12. COMPLETE MAC CLI FLOW
+--------------------------
+
+Mac Terminal
+     ↓
+az login
+     ↓
+Microsoft Entra ID
+     ↓
+Authentication
+     ↓
+Access Token
+     ↓
+az account list
+     ↓
+See available subscriptions
+     ↓
+az account set
+     ↓
+Choose active subscription
+     ↓
+az account show
+     ↓
+Verify current context
+     ↓
+Run Azure commands
+     ↓
+Azure APIs
+     ↓
+Azure Resource Manager
+     ↓
+Azure Resources
+
+
+13. MOST IMPORTANT REVISION
+----------------------------
+
+`az version`
+→ Is Azure CLI installed? What version?
+
+`az --help`
+→ What can Azure CLI do?
+
+`az find`
+→ Help me discover the command I need.
+
+`az login`
+→ WHO am I? → Authentication
+
+`az account list`
+→ What subscriptions can I access?
+
+`az account show`
+→ Which subscription is currently active?
+
+`az account set`
+→ Change the active subscription.
+
+
+14. ONE-LINE MEMORY TRICK
+--------------------------
+
+LOGIN → LIST → SHOW → SET
+
+az login
+→ Authenticate
+
+az account list
+→ See available subscriptions
+
+az account show
+→ See current subscription
+
+az account set
+→ Switch subscription
+
+
+15. FINAL MENTAL MODEL
+----------------------
+
+Mac Terminal
+    ↓
+Azure CLI
+    ↓
+az login
+    ↓
+Entra ID
+    ↓
+Access Token
+    ↓
+Subscription Context
+    ↓
+Azure API
+    ↓
+ARM
+    ↓
+Resource Provider
+    ↓
+Azure Resource
+    ↓
+JSON Response
+    ↓
+Terminal
