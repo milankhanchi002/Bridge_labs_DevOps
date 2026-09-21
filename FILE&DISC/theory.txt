@@ -1,0 +1,36 @@
+             Azure Managed Disk / Physical SSD
+                         │
+                         ↓
+                    /dev/sdb
+                         │
+                         ↓
+                     Partition
+                    /dev/sdb1
+                         │
+                         ↓
+                    Filesystem
+                      ext4
+                         │
+                         ↓
+                       mount
+                         │
+                         ↓
+                       /data
+                         │
+             ┌───────────┼───────────┐
+             ↓           ↓           ↓
+          app.log     uploads/    backups/
+
+
+
+
+
+
+
+          lsblk   → disk/partition/mount structure
+blkid   → UUID + filesystem type
+df -h   → filesystem space
+du -sh  → directory/file space
+mount   → attach filesystem to directory tree
+umount  → detach filesystem
+fstab   → persistent mount configuration

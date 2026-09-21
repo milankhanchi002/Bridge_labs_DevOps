@@ -1,0 +1,98 @@
+                 Application
+                     ↑
+              curl / HTTP
+                     ↑
+                TCP :8080
+                     ↑
+               nc -vz test
+                     ↑
+              Listening socket
+                     ↑
+                 ss -lntp
+                     ↑
+                  Process
+                     ↑
+             systemctl / ps
+                     ↑
+            Linux networking
+                     ↑
+        NSG / Firewall / Routes
+                     ↑
+                 Azure
+
+
+
+
+
+1. Is process running?
+       ↓
+2. Is port listening?
+       ↓
+3. Is it listening on correct IP?
+       ↓
+4. Can TCP reach the port?
+       ↓
+5. Does HTTP/application respond?
+       ↓
+6. If not → firewall / NSG / route / app configuration
+
+
+
+
+
+
+
+ip addr
+ip link
+ip route
+ip route get 8.8.8.8
+
+cat /etc/hosts
+cat /etc/resolv.conf
+
+getent hosts google.com
+
+
+
+
+
+
+1. Process running?
+        ↓
+2. Port listening?
+        ↓
+3. Correct IP/interface?
+        ↓
+4. Can client reach server?
+        ↓
+5. Can client reach TCP port?
+        ↓
+6. Does application respond?
+        ↓
+7. DNS working?
+        ↓
+8. Firewall / NSG / routing issue?
+
+
+
+
+
+
+
+
+
+
+
+
+Command	Question
+ps	Is the process running?
+systemctl status	Is the service running?
+ss -lntp	Is the port listening?
+ip addr	What interfaces/IPs exist?
+ip route	Where will traffic go?
+ping	Is ICMP reachability working?
+nc -vz IP PORT	Can TCP connect?
+curl -v URL	Does the application respond?
+getent hosts NAME	Does DNS resolve?
+dig NAME	What DNS response are we getting?
+traceroute / tracepath	What path does traffic take?

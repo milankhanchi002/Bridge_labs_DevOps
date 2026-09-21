@@ -16,3 +16,73 @@ Microsoft.Resources
  │
  ↓
 Resource Group
+
+
+az version
+az --help
+az find "virtual machine"
+az find "resource group"
+
+az login
+
+az account list
+az account list -o table
+az account show
+az account show -o table
+az account set --subscription "Azure for Students"
+
+az group --help
+az group create --name "rg-cli-mini-lab" --location "eastasia"
+az group create --name "rg-cli-practice" --location "eastasia"
+
+az group show --name "rg-cli-mini-lab"
+az group show --name "rg-cli-mini-lab" --query "{Name:name,State:properties.provisioningState,Location:location,ID:id}" -o table
+
+az group list
+az group list -o table
+az group list --query "[].{Name:name,Location:location}" -o table
+
+az group exists --name "rg-cli-mini-lab"
+
+az group update --name "rg-cli-mini-lab" --set tags.environment=practice
+az group update --name "rg-cli-mini-lab" --set tags.project=azure-cli
+az group update --name "rg-cli-mini-lab" --set tags.owner=milan
+az group update --name "rg-cli-mini-lab" --set tags.environment=testing
+az group update --name "rg-cli-mini-lab" --set tags.environment=practice
+az group update --name "rg-cli-mini-lab" --remove tags.owner
+
+az group show --name "rg-cli-mini-lab" --query tags -o json
+az group show --name "rg-cli-mini-lab" --query id -o tsv
+az group show --name "rg-cli-mini-lab" --query name
+az group show --name "rg-cli-mini-lab" --query location
+az group show --name "rg-cli-mini-lab" --query properties.provisioningState
+
+az group list --query "[].name"
+az group list --query "[].{Name:name,Location:location}"
+az group list --query "[].{Name:name,Location:location}" -o table
+
+az group list --query "[?location=='eastasia'].name" -o tsv
+az group list --query "[?tags.environment=='practice'].name" -o tsv
+az group list --query "[?tags.environment=='practice'].{Name:name,Location:location,Project:tags.project}" -o table
+
+az group list --query "length(@)" -o tsv
+
+az resource list
+az resource list --resource-group "rg-cli-mini-lab"
+az resource show --ids "<RESOURCE_ID>"
+
+RG_ID=$(az group show --name "rg-cli-mini-lab" --query id -o tsv)
+echo "$RG_ID"
+
+az group delete --name "rg-cli-mini-lab" --yes
+az group delete --name "rg-cli-mini-lab" --yes --no-wait
+
+az group exists --name "rg-cli-mini-lab"
+
+az group create --help
+az group show --help
+az group update --help
+az group delete --help
+az network --help
+az network vnet --help
+az network vnet create --help
