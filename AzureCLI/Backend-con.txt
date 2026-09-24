@@ -1,0 +1,43 @@
+AZURE CLI - SSH KEY MANAGEMENT LAB
+
+1. Check SSH agent keys
+ssh-add -L
+
+2. Check VM SSH public key
+az vm show -g rg-cli-3tier -n app-vm1 \
+--query "osProfile.linuxConfiguration.ssh.publicKeys[].keyData" -o tsv
+
+3. Derive public key from private key
+ssh-keygen -y -f <private-key.pem>
+
+4. Generate new SSH key pair
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/app-vm1_key
+
+Creates:
+~/.ssh/app-vm1_key      = PRIVATE KEY
+~/.ssh/app-vm1_key.pub  = PUBLIC KEY
+
+5. Update VM with new public key
+az vm user update \
+-g rg-cli-3tier \
+-n app-vm1 \
+--username azureuser \
+--ssh-key-value "$(cat ~/.ssh/app-vm1_key.pub)"
+
+6. SSH to Web VM
+ssh azureuser@20.205.0.124
+
+7. Copy App VM private key to Web VM
+scp ~/.ssh/app-vm1_key \
+azureuser@20.205.0.124:~/.ssh/
+
+8. Secure private key
+chmod 600 ~/.ssh/app-vm1_key
+
+9. Web VM → App VM
+ssh -i ~/.ssh/app-vm1_key azureuser@10.30.2.4
+
+KEY CONCEPT:
+Public key → stored on VM
+Private key → kept by SSH client
+NSG allows network access; SSH key provides authentication.

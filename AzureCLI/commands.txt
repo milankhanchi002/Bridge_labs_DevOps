@@ -1,0 +1,5 @@
+az vm list   --query "[].{VM:name,RG:resourceGroup,Location:location,Size:hardwareProfile.vmSize}"   -o table
+
+
+
+az vm list-usage   --location eastasia   --query "[?name.value=='cores'].{Name:name.localizedValue,Current:currentValue,Limit:limit}"   -o table
