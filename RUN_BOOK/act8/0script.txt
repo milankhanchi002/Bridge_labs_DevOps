@@ -1,0 +1,61 @@
+param(
+    [Parameter(Mandatory=$false)]
+    [string]$KeyVaultName = "kv-cert-monitor-01",
+
+    [Parameter(Mandatory=$false)]
+    [int]$ThresholdDays = 400,
+
+    [Parameter(Mandatory=$false)]
+)
+
+# Authenticate using Automation Account Managed Identity
+try {
+    Write-Output "Logging in to Azure using Managed Identity..."
+    Connect-AzAccount -Identity
+} catch {
+    Write-Error "Failed to authenticate using Managed Identity: $_"
+    exit
+}
+
+Write-Output "Checking certificates in Key Vault: $KeyVaultName..."
+$certificates = Get-AzKeyVaultCertificate -VaultName $KeyVaultName
+
+$expiringCerts = @()
+$currentDate = Get-Date
+
+foreach ($cert in $certificates) {
+    $certDetails = Get-AzKeyVaultCertificate -VaultName $KeyVaultName -Name $cert.Name
+    $expiryDate = $certDetails.Expires
+    $daysRemaining = ($expiryDate - $currentDate).Days
+
+    Write-Output "Certificate: $($cert.Name) | Expires on: $expiryDate | Days remaining: $daysRemaining"
+
+    if ($daysRemaining -le $ThresholdDays) {
+        $expiringCerts += [PSCustomObject]@{
+            Name          = $cert.Name
+            ExpiryDate    = $expiryDate
+            DaysRemaining = $daysRemaining
+        }
+    }
+}
+
+if ($expiringCerts.Count -gt 0) {
+    Write-Output "Found $($expiringCerts.Count) certificate(s) expiring within $ThresholdDays days. Sending Slack alert..."
+
+    $messageBody = "*⚠️ Azure Key Vault Certificate Warning!*" + "`n" +
+                   "Vault: *$KeyVaultName*" + "`n" +
+                   "The following certificates are expiring soon:"
+
+    foreach ($ec in $expiringCerts) {
+        $messageBody += "`n• *`$($ec.Name)`* expires on `$($ec.ExpiryDate) (`$($ec.DaysRemaining) days left)"
+    }
+
+    $payload = @{
+        text = $messageBody
+    } | ConvertTo-Json
+
+    Invoke-RestMethod -Uri $SlackWebhookUrl -Method Post -Body $payload -ContentType "application/json"
+    Write-Output "Slack notification sent successfully."
+} else {
+    Write-Output "All certificates are valid. No Slack alert needed."
+}
