@@ -1,0 +1,30 @@
+Step 1: Primary aur Secondary Regions decide karna
+Primary Region: Jaise eastus (jahan hamara main application chal raha hai).
+Secondary (DR) Region: Jaise westus ya centralus (jahan warm-standby replica infrastructure banega).
+
+
+Step 2: Resource Groups create karna
+Failover test ko cleanly test karne ke liye do alag resource groups hone chahiye:
+
+
+rg-primary-app (Primary region ke liye)
+rg-dr-warm-standby (Secondary DR region ke liye)
+
+
+
+Step 3: Database Geo-Replication ya Backup setup
+Warm-standby model mein database ka sync hona sabse zaroori hai:
+Agar aap Azure SQL ya Managed Database use kar rahe hain, toh uska ek Geo-Replica secondary region mein configured hona chahiye.
+Ya phir automation ke through restore karne ke liye ek latest Database Backup Snapshot available hona chahiye.
+
+
+
+Step 4: DNS / Traffic Manager Setup
+Traffic routing ke liye:
+Ek Azure Traffic Manager profile ya Azure DNS CNAME record hona chahiye, jise failover ke time script update kar sake taaki users ka traffic primary se secondary region par redirect ho jaye.
+
+
+
+Step 5: Automation Account Permissions (IAM)
+Jaise humne pichli assignment mein kiya tha:
+Automation Account ki Managed Identity ke paas secondary region mein resources create karne aur DNS/Network settings update karne ke liye Contributor ya Network Contributor role hona chahiye.

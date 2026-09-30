@@ -1,0 +1,63 @@
+<#
+.SYNOPSIS
+    Self-Service User Onboarding Automation Runbook (Fixed)
+#>
+
+param(
+    [Parameter(Mandatory=$false)]
+    [string]$UserEmail = "dhruv0410.be23@chitkara.edu.in",  
+    
+    [Parameter(Mandatory=$false)]
+    [string]$UserObjectId = "505b4c55-c84d-4b14-8070-b7379feb0731", 
+    
+    [Parameter(Mandatory=$false)]
+    [string]$TargetGroupName = "Dev-Team-Group", 
+    
+    [Parameter(Mandatory=$false)]
+    [string]$ResourceGroupName = "rg-sandbox-dhruv", 
+    
+    [Parameter(Mandatory=$false)]
+    [string]$VmName = "dhruv-sandbox-vm"
+)
+
+# 1. Login using Managed Identity and Set Subscription
+Write-Output "Logging into Azure using Managed Identity..."
+az login --identity
+
+$TargetSubscriptionId = "6910c0dc-ba5e-4d6e-be6a-fa6f0db177a9"
+az account set --subscription $TargetSubscriptionId
+
+# 2. STEP 1: Add User to Entra ID Security Group
+Write-Output "Adding user $UserEmail to security group $TargetGroupName..."
+try {
+    az ad group member add --group $TargetGroupName --member-id $UserObjectId
+    Write-Output "Successfully added user to the group."
+} catch {
+    Write-Error "Failed to add user to group: $_"
+}
+
+# 3. STEP 2: Assign Contributor RBAC Role on Resource Group
+Write-Output "Creating Resource Group $ResourceGroupName and assigning RBAC..."
+az group create --name $ResourceGroupName --location "eastus"
+
+# Fixing the scope argument explicitly for the role assignment
+$Scope = "/subscriptions/$TargetSubscriptionId/resourceGroups/$ResourceGroupName"
+
+az role assignment create `
+    --assignee $UserObjectId `
+    --role "Contributor" `
+    --scope $Scope
+
+Write-Output "RBAC Contributor role successfully assigned to $UserEmail on$ResourceGroupName."
+
+# 4. STEP 3: Provision Developer Sandbox VM (Fixed Ubuntu Image URN)
+Write-Output "Provisioning Sandbox VM '$VmName' inside$ResourceGroupName..."
+az vm create `
+    --resource-group $ResourceGroupName `
+    --name $VmName `
+    --image "Canonical:ubuntu-24_04-lts:server:latest" `
+    --size "Standard_D2as_v7" `
+    --admin-username "azureuser" `
+    --generate-ssh-keys
+
+Write-Output "User Onboarding workflow completed successfully for $UserEmail!"

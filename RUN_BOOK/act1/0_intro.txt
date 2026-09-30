@@ -1,0 +1,45 @@
+make orphan resource in your rg devvrat-test
+| Resource         | What we'll make                                                          |
+| ---------------- | ------------------------------------------------------------------------ |
+| **Managed disk** | Create a standalone disk **not attached to any VM** → orphaned           |
+| **Public IP**    | Create a Public IP **not associated with anything** → orphaned           |
+| **Snapshot**     | Create a snapshot and make it appear **old enough for the cleanup rule** |
+
+Next step — give costopt permission on devvrat-test
+
+Step 3 — Create the cleanup runbook
+Name: OrphanedResourceCleanup
+step 4 put the 0 day retention script,cant test for 30 days old
+and test it
+step 5 publish it 
+
+step 6 change the script from 0 days to 30 days
+Your published runbook currently has:
+
+$snapshotRetentionDays = 0
+
+That was only for testing. We don't want the real automation to delete every snapshot immediately.
+
+Change it to 30 days
+
+Edit the runbook and change:
+
+$snapshotRetentionDays = 0
+
+step 7 create a daily schedule to check for orphan daily 
+
+Step — Create cleanup schedule
+
+Go to:
+
+Automation Account costopt → Runbooks → OrphanedResourceCleanup → Schedules → Add a schedule
+
+Choose:
+
+Link a schedule to your runbook: Create a new schedule
+Name: OrphanedResourceCleanupDaily
+Starts: choose a convenient time
+Recurrence: Recurring
+Recur every: 1 day
+Expiration: No
+Timezone: your local timezone

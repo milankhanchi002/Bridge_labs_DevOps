@@ -1,0 +1,228 @@
+$schema
+contentVersion
+parameters
+variables
+resources
+dependsOn
+outputs
+{
+  "$schema": "...",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+  },
+
+  "variables": {
+  },
+
+  "resources": [
+  ],
+
+  "outputs": {
+  }
+}
+
+S
+C
+P
+v
+R
+O
+
+
+1. $schema
+Example:
+"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#"
+This tells tools:
+"This JSON follows the ARM deployment template schema."
+Think of it like the rulebook/structure definition for the JSON.
+You normally don't need to modify it.
+
+
+
+
+2.   "contentVersion": "1.0.0.0"
+This is simply the version of your template.
+
+Template version
+contentVersion
+
+contentVersion
+     ↓
+Version of your template
+apiVersion.         "apiVersion": "2023-09-01"
+     ↓
+Version of Azure resource API
+
+
+
+
+3. PARAMETERS -- kind of place holder with key we can put value acc to our need 
+"parameters": {
+  "location": {
+    "type": "string"       ----- TYPE1
+  },
+
+  "instanceCount": {
+    "type": "int"    ----- TYPE2
+  },
+
+  "enableMonitoring": {
+    "type": "bool"  -------- TYPE3
+  }
+}
+
+TYPES Common types include:
+string
+int
+bool
+array
+object
+secureString
+secureObject
+
+
+
+
+4.Default Value
+"location": {
+  "type": "string",
+  "defaultValue": "eastasia"
+}
+
+
+
+5. Allowed values
+"location": {
+  "type": "string",
+  "allowedValues": [
+    "eastasia",
+    "centralindia"
+  ]
+}
+
+
+
+
+6.variables
+"variables": {
+  "vnetName": "chatapp-vnet"
+} can define inside templete name of anything kinf=d of hardcoded
+
+Parameter
+   ↓
+Comes from outside
+
+Variable
+   ↓
+Defined inside template
+
+
+
+
+7.Why not just use parameters for everything?
+Because parameters represent things you expect to vary.
+Suppose:
+Environment = Development
+Location = East Asia
+These might be parameters.
+
+But suppose your naming convention is:
+chatapp-dev-vnet
+chatapp-dev-nsg
+chatapp-dev-vm
+You could construct these names using variables/functions rather than asking the user to enter every 
+single name.
+This keeps the deployment consistent.
+
+
+
+
+8.resources. ///  "resources": []
+
+{
+  "type": "...",
+  "apiVersion": "...",
+  "name": "...",
+  "location": "...",  ---------- "location": "[parameters('location')]"----- You will usually avoid hardcoding 
+                                                                             it and instead use a parameter:
+
+  "properties": {
+  "addressSpace": {
+    "addressPrefixes": [
+      "10.0.0.0/16"
+    ]
+  }
+}  ^
+}
+
+
+9.OUTPUTS "outputs": {}
+VNet name
+VNet resource ID
+Key Vault URI
+Public IP
+
+
+ARM Template
+│
+├── $schema
+│      ↓
+│   Template structure
+│
+├── contentVersion
+│      ↓
+│   Your template version
+│
+├── parameters
+│      ↓
+│   Inputs
+│
+├── variables
+│      ↓
+│   Internal reusable values
+│
+├── resources
+│      ↓
+│   Azure infrastructure
+│
+└── outputs
+       ↓
+    Deployment results
+
+
+{
+  "$schema": "...",
+  "contentVersion": "1.0.0.0",
+
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "eastasia"
+    }
+  },
+
+  "variables": {
+    "vnetName": "my-vnet"
+  },
+
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        }
+      }
+    }
+  ],
+
+  "outputs": {
+  }
+}

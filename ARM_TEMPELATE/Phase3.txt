@@ -1,0 +1,27 @@
+Phase 3 — Your First ARM Template
+
+Step 1
+Create ARM template
+       ↓
+Step 2
+Understand every line
+       ↓
+Step 3
+Validate template
+       ↓
+Step 4
+Deploy using Azure CLI
+       ↓
+Step 5
+Inspect resource using CLI
+       ↓
+Step 6
+Inspect deployment
+       ↓
+Step 7
+Modify template
+       ↓
+Step 8
+Deploy again
+       ↓
+Observe what happens

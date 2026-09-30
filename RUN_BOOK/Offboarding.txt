@@ -1,0 +1,40 @@
+<#
+.SYNOPSIS
+    Self-Service User Offboarding Automation Runbook
+#>
+
+param(
+    [Parameter(Mandatory=$false)]
+    [string]$UserEmail = "dhruv0410.be23@chitkara.edu.in",  
+    
+    [Parameter(Mandatory=$false)]
+    [string]$UserObjectId = "505b4c55-c84d-4b14-8070-b7379feb0731", 
+    
+    [Parameter(Mandatory=$false)]
+    [string]$TargetGroupName = "Dev-Team-Group", 
+    
+    [Parameter(Mandatory=$false)]
+    [string]$ResourceGroupName = "rg-sandbox-dhruv"
+)
+
+# 1. Login using Managed Identity and Set Subscription
+Write-Output "Logging into Azure using Managed Identity for Offboarding..."
+az login --identity
+
+$TargetSubscriptionId = "6910c0dc-ba5e-4d6e-be6a-fa6f0db177a9"
+az account set --subscription $TargetSubscriptionId
+
+# 2. STEP 1: Remove User from Entra ID Security Group
+Write-Output "Removing user $UserEmail from security group $TargetGroupName..."
+try {
+    az ad group member remove --group $TargetGroupName --member-id $UserObjectId
+    Write-Output "Successfully removed user from the group."
+} catch {
+    Write-Error "Failed to remove user from group: $_"
+}
+
+# 3. STEP 2: Delete Developer Sandbox Resource Group (Deletes VM, Disks, and RBAC automatically)
+Write-Output "Deleting Sandbox Resource Group $ResourceGroupName and cleaning up resources..."
+az group delete --name $ResourceGroupName --yes --no-wait
+
+Write-Output "User Offboarding and resource cleanup workflow completed successfully for $UserEmail!"

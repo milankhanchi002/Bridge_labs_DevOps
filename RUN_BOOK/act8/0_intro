@@ -1,0 +1,125 @@
+Activity 8 — What we'll build
+Azure Key Vault
+      ↓
+Certificate
+      ↓
+Automation Runbook
+      ↓
+Check expiry date
+      ↓
+30-day threshold
+      ↓
+Slack alert if expiring
+
+
+Step 1 — Create the Key Vault
+
+In Azure Portal:
+
+Create a resource → Key Vault
+
+Use:
+
+Resource group: devvrat-test
+Key vault name: something globally unique, e.g. kv-devvrat-cert
+Region: East US
+Pricing tier: Standard
+Keep the default security settings unless Azure requires otherwise.
+
+Step 2 — Create a test certificate
+
+Open your Key Vault kv-devvrat-cert.
+
+Go to:
+
+Objects → Certificates → Generate/Import → Generate
+
+Set:
+
+Method of Certificate Creation: Generate
+Certificate Name: TestCertificate
+Type of Certificate Authority (CA): Self-signed certificate
+Subject: CN=test.devvrat.local
+Validity Period: 90 days
+Content Type: PKCS #12
+Leave the other options at their defaults.
+
+Why 90 days?
+
+We need a real certificate with an expiry date so our Runbook can calculate:
+
+Certificate expiry
+
+Step 3 — Give costopt permission to read the certificate
+
+We want the system-assigned managed identity of Automation Account costopt to read certificates from Key Vault kv-devvrat-cert.
+
+In the Key Vault:
+
+kv-devvrat-cert → Access control (IAM) → Add → Add role assignment
+
+Choose:
+
+Role: Key Vault Certificates Officer is not what we need.
+Use Key Vault Reader if available for your setup.
+
+Then:
+
+Next → Assign access to: Managed identity → Select members
+
+We only want the Automation Account to read certificate metadata, particularly:
+
+Certificate name
+Expiration date
+
+It doesn't need permission to modify or delete the certificate.   
+
+
+Step 4 — Create the certificate-check Runbook
+
+Go to:
+
+Automation Account costopt → Runbooks → Create a runbook
+
+Set:
+
+Name: CertificateExpiryCheck
+Runbook type: PowerShell
+Runtime: 7.2
+Description: Checks Key Vault certificate expiry and reports certificates nearing expiration\
+
+It simply:
+
+Connect to Azure
+      ↓
+Read certificates from kv-devvrat-cert
+      ↓
+Get expiration date
+      ↓
+Calculate days remaining
+      ↓
+≤ 30 days → WARNING
+> 30 days → OK
+
+Don't publish yet. Save it and run it in the Test pane first.
+
+Since your certificate currently has plenty of validity remaining, we should expect something like:
+
+Certificate: TestCertificate
+Expires: ...
+Days remaining: ...
+STATUS: OK - Certificate has more than 30 days remaining.
+
+Certificate expiry check completed.
+
+Step 5 — Add Slack alerting
+
+We'll modify the Runbook so:
+
+Certificate >30 days → Slack says OK
+Certificate ≤30 days → Slack says WARNING
+Certificate ≤7 days → Slack says CRITICAL
+
+We can reuse your existing encrypted Automation variable:
+
+SlackWebhookUrl

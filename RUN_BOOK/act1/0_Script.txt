@@ -1,0 +1,57 @@
+$ErrorActionPreference = "Stop"
+
+Connect-AzAccount -Identity
+
+$resourceGroup = "devvrat-test"
+$snapshotRetentionDays = 30
+
+Write-Output "========================================"
+Write-Output "Orphaned Resource Cleanup"
+Write-Output "Resource Group: $resourceGroup"
+Write-Output "========================================"
+Write-Output ""
+
+# 1. Find unattached managed disks
+Write-Output "Checking for unattached managed disks..."
+
+$disks = Get-AzDisk -ResourceGroupName $resourceGroup | Where-Object {
+    $_.ManagedBy -eq $null
+}
+
+foreach ($disk in $disks) {
+    Write-Output "Deleting unattached disk: $($disk.Name)"
+    Remove-AzDisk -ResourceGroupName $resourceGroup -DiskName $disk.Name -Force
+}
+
+# 2. Find unassociated public IPs
+Write-Output ""
+Write-Output "Checking for orphaned public IPs..."
+
+$publicIPs = Get-AzPublicIpAddress -ResourceGroupName $resourceGroup | Where-Object {
+    $_.IpConfiguration -eq $null
+}
+
+foreach ($publicIP in $publicIPs) {
+    Write-Output "Deleting orphaned public IP: $($publicIP.Name)"
+    Remove-AzPublicIpAddress -ResourceGroupName $resourceGroup -Name $publicIP.Name -Force
+}
+
+# 3. Find old snapshots
+Write-Output ""
+Write-Output "Checking for old snapshots..."
+
+$cutoffDate = (Get-Date).AddDays(-$snapshotRetentionDays)
+
+$snapshots = Get-AzSnapshot -ResourceGroupName $resourceGroup | Where-Object {
+    $_.TimeCreated -lt $cutoffDate
+}
+
+foreach ($snapshot in $snapshots) {
+    Write-Output "Deleting old snapshot: $($snapshot.Name)"
+    Remove-AzSnapshot -ResourceGroupName $resourceGroup -SnapshotName $snapshot.Name -Force
+}
+
+Write-Output ""
+Write-Output "========================================"
+Write-Output "Orphaned resource cleanup completed."
+Write-Output "========================================"

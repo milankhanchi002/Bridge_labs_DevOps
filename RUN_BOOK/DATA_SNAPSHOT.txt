@@ -1,0 +1,59 @@
+<#
+.SYNOPSIS
+    Automated Cleanup Script for Old Snapshots using Azure CLI inside a PowerShell Runbook
+#>
+
+# 1. Login using Managed Identity for Azure CLI
+Write-Output "Logging in to Azure using Managed Identity with Azure CLI..."
+az login --identity
+
+# 2. Set Target Subscription ID
+$TargetSubscriptionId = "6910c0dc-ba5e-4d6e-be6a-fa6f0db177a9"
+Write-Output "Setting subscription context to: $TargetSubscriptionId"
+az account set --subscription $TargetSubscriptionId
+
+# 3. SCAN & CLEAN OLD SNAPSHOTS (e.g., older than 30 days)
+Write-Output "Scanning for Snapshots older than 30 days..."
+
+# Yeh query saare snapshots ke name, resource group, aur creation time (timeCreated) nikal legi
+$snapshots = az snapshot list --query "[].{Name:name, ResourceGroup:resourceGroup, TimeCreated:timeCreated}" -o tsv
+
+$found =$false
+$thresholdDays = 30$currentDate = Get-Date
+
+if ([string]::IsNullOrEmpty($snapshots)) {
+    Write-Output "No snapshots found in the subscription."
+} else {
+    $snapshots -split "`n" | ForEach-Object {
+        if (-not [string]::IsNullOrWhiteSpace($_)) {
+            $parts = $_.Split("`t")
+            $snapName =$parts[0].Trim()
+            $rgName =$parts[1].Trim()
+            $timeCreatedStr =$parts[2].Trim()
+            
+            # Date calculation: Check karein ki snapshot kitna purana hai
+            $createdDate = Get-Date $timeCreatedStr$ageInDays = ($currentDate -$createdDate).Days
+            
+            # Agar snapshot 30 din se zyada purana hai
+            if ($ageInDays -gt$thresholdDays) {
+                $found =$true
+                Write-Output "Found old snapshot: $snapName in RG: $rgName (Age:$ageInDays days)"
+                
+                # Actual deletion ke liye niche wali command ka comment (#) hata dena:
+                # az snapshot delete --resource-group $rgName --name$snapName --yes
+            }
+        }
+    }
+}
+
+if (-not $found) {
+    Write-Output "No old snapshots exceeding 30 days were found."
+}
+
+Write-Output "CLI-based snapshot cleanup scan completed successfully!"
+
+
+
+
+
+https://204c8503-c332-4440-9c23-64067bd7fac5.webhook.eus.azure-automation.net/webhooks?token=KyXJ6mrb%2bM%2f2zWlQL1Dgr%2f5W6hbARPuSddarOXT34x4%3d

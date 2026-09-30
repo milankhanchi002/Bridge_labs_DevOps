@@ -1,0 +1,185 @@
+1. ARM
+2. ARM Template
+3. Resource Provider
+4. Resource Type
+5. Deployment
+6. Imperative vs Declarative
+7. Infrastructure as Code (IaC)
+8. Desired State
+9. Configuration Drift
+10. Idempotency
+
+
+                YOU
+                 │
+       ┌─────────┴─────────┐
+       │                   │
+     Portal               CLI
+       │                   │
+       └─────────┬─────────┘
+                 ↓
+       Azure Resource Manager
+                 │
+       ┌─────────┼─────────┐
+       ↓         ↓         ↓
+    Compute   Network    Storage
+       │         │         │
+       ↓         ↓         ↓
+      VM        VNet      Account
+      you're using the Azure CLI to communicate with Azure's management APIs, with ARM being
+     the central management layer for Azure resources.
+
+ARM provides a common management framework for things such as:
+Resources
+Resource groups
+Deployments
+RBAC
+Tags
+Locks
+Policies
+Resource providers
+Microsoft.Network/virtualNetworks
+Microsoft.Compute/virtualMachines
+Microsoft.KeyVault/vaults
+
+The provider is essentially the Azure service namespace responsible for that category of resources.
+
+ARM
+ │
+ ├── Microsoft.Network
+ │       ├── VNet
+ │       ├── NSG
+ │       └── NIC
+ │
+ ├── Microsoft.Compute
+ │       ├── VM
+ │       └── VMSS
+ │
+ └── Microsoft.Storage
+         └── Storage Account
+
+Resource Type:--->
+{
+  "type": "Microsoft.Network/virtualNetworks"
+}
+This template is defining an Azure VNet.
+
+
+
+
+Deployment -- this is just telling arm or managemnt layer that make these resources using this template 
+
+az deployment group create \
+  --resource-group my-rg \
+  --template-file template.json
+
+  here with cli we are just telling management layer not creating anything 
+
+-----------------------------------------------------------------------------------------------------------------
+
+Imperative vs Declarative
+Imperative ----You tell the system what actions to perform.
+            az group create ...
+            az network vnet create ...
+            az network vnet subnet create ...
+            az network nsg create ...
+            az network vnet subnet update ...
+
+Declarative
+You describe the desired final state.         
+
+I want:
+VNet: app-vnet
+Address space: 10.0.0.0/16
+Subnets:
+  web: 10.0.1.0/24
+  app: 10.0.2.0/24
+  db: 10.0.3.0/24   
+  This is what I want my infrastructure to look like.
+
+-----------------------------------------------------------------------------------------------------------------
+
+IAC -Infrastructure as Code. ---Infrastructure as Code = managing infrastructure through machine-
+readable code/configuration instead of relying on manual configuration.
+
+Infrastructure Code
+       ↓
+      Git
+       ↓
+     Review
+       ↓
+     Pipeline
+       ↓
+     Azure
+     
+This gives you:
+Repeatability
+You can recreate the environment.
+Version control
+You can see:
+Who changed infrastructure?
+What changed?
+When?
+
+Automation
+CI/CD can deploy infrastructure.
+
+Consistency
+Dev/staging/prod can be created from controlled definitions.
+
+
+             Infrastructure
+                  │
+          ┌───────┴───────┐
+          │               │
+    Desired State     Actual State
+       (code)           (Azure)
+          │               │
+          │               │
+          └────── Compare ┘
+
+The IaC system tries to make actual infrastructure conform to the desired definition.
+This concept becomes even more important when we reach Terraform.          
+
+
+configuration drift.------But someone goes into Portal and manually adds something now dont match with git repo.
+
+Idempotency Then you deploy the same definition again.
+A good declarative system should not blindly create Instead, it determines that the desired resource 
+already exists and makes the necessary changes, if any.
+That's the basic idea behind idempotent infrastructure operations.
+
+
+
+
+Your Phase 1 checkpoint
+
+Before we move to Phase 2, you should be able to explain these without memorizing definitions:
+
+What is Azure Resource Manager?
+What is an ARM template?
+What's the difference between ARM and an ARM template?
+What is a resource provider?
+What is Microsoft.Network/virtualNetworks?
+What is a deployment?
+Imperative vs declarative?
+What is Infrastructure as Code?
+What is desired state?
+What is configuration drift?
+What does idempotent mean?
+Why can CLI and ARM templates be used together?
+        template.json
+             │
+             │  "This is what I want"
+             ↓
+          Azure CLI
+             │
+             │  "Deploy this"
+             ↓
+    Azure Resource Manager
+             │
+             ↓
+      Resource Providers
+             │
+             ↓
+        Azure Resources

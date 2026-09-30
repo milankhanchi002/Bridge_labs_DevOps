@@ -1,0 +1,33 @@
+"Hi, I'm Milan Khanchi, a Computer Science Engineering student at Chitkara University and currently a DevOps 
+Fellow at the BridgeLab Fellowship Program.
+
+During my fellowship, I started with Linux and networking fundamentals and then moved into Microsoft 
+Azure and cloud infrastructure.
+
+I've worked hands-on with Azure services such as VNets, subnets, NSGs, ASGs, VMs, VM Scale Sets, Load 
+Balancers, NAT Gateway, Azure Firewall, routing, VNet peering, Managed Identities, Key Vault, Azure Policy
+ and MySQL Flexible Server.
+
+One of my major projects was deploying a three-tier Django chat application on Azure, where I separated 
+the web, backend and database layers and implemented private networking, security rules and identity-based
+ access to Key Vault and the database.
+
+Alongside DevOps, I have a development background with Java, Spring Boot, Node.js, React and databases 
+such as PostgreSQL, MySQL and MongoDB.
+
+I'm particularly interested in understanding how applications are deployed, secured, connected and operated 
+reliably in cloud environments."
+
+
+
+Process running
+↓
+Port listening?
+↓
+Local curl works?
+↓
+Network connectivity?
+↓
+Firewall/NSG?
+↓
+Reverse proxy?

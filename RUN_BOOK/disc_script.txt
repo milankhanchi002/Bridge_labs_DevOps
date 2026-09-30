@@ -1,0 +1,45 @@
+<#
+.SYNOPSIS
+    Automated Cleanup Script for Unattached Managed Disks using Azure CLI inside a PowerShell Runbook
+#>
+
+# 1. Login using Managed Identity for Azure CLI
+Write-Output "Logging in to Azure using Managed Identity with Azure CLI..."
+az login --identity
+
+# 2. Set Target Subscription ID (Aapki Pay-As-You-Go Subscription ID)
+$TargetSubscriptionId = "6910c0dc-ba5e-4d6e-be6a-fa6f0db177a9"
+Write-Output "Setting subscription context to: $TargetSubscriptionId"
+az account set --subscription $TargetSubscriptionId
+
+# 3. SCAN & CLEAN UNATTACHED MANAGED DISKS
+Write-Output "Scanning for unattached Managed Disks..."
+$unattachedDisks = az disk list --query "[?managedBy == null].[name, resourceGroup]" -o tsv
+
+$found =$false
+if ([string]::IsNullOrEmpty($unattachedDisks)) {
+    Write-Output "No unattached Managed Disks found."
+} else {
+    $unattachedDisks -split "`n" | ForEach-Object {
+        if (-not [string]::IsNullOrWhiteSpace($_)) {
+            $found = $true
+            $parts = $_.Split("`t")
+            $diskName =$parts[0].Trim()
+            $rgName =$parts[1].Trim()
+            
+            Write-Output "Found unattached disk: $diskName in Resource Group:$rgName"
+            
+            # Actual deletion ke liye niche wali command ka comment (#) hata dena:
+            # az disk delete --resource-group $rgName --name$diskName --yes
+        }
+    }
+}
+
+Write-Output "CLI-based disk cleanup scan completed successfully!"
+
+
+
+
+
+
+505b4c55-c84d-4b14-8070-b7379feb0731
